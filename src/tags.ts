@@ -9,6 +9,14 @@ export type Mood = 'I' | 'M';
 export type Aspect = 'PF' | 'IP';
 export type Voice = 'A' | 'P';
 
+// Full-name grammeme types for better readability
+export type CaseName = 'nominative' | 'genitive' | 'dative' | 'accusative' | 'instrumental' | 'locative' | 'vocative';
+export type GenderName = 'masculine' | 'feminine' | 'neuter';
+export type NumberName = 'singular' | 'plural';
+export type PosName = 'noun' | 'adjective' | 'verb' | 'adverb' | 'pronoun' | 'conjunction' | 'interjection' | 'particle';
+export type TenseName = 'present' | 'past' | 'future';
+export type MoodName = 'indicative' | 'imperative';
+
 export interface Grammeme {
   pos?: Pos;
   case?: Case;
@@ -19,10 +27,64 @@ export interface Grammeme {
   mood?: Mood;
 }
 
+export interface GrammemeInput {
+  pos?: Pos | PosName;
+  case?: Case | CaseName;
+  gender?: Gender | GenderName;
+  number?: Num | NumberName;
+  person?: Person;
+  tense?: Tense | TenseName;
+  mood?: Mood | MoodName;
+}
+
 // Valid sets for runtime checking
 const CASES = new Set<string>(['N', 'G', 'D', 'A', 'I', 'L', 'H']);
 const GENDERS = new Set<string>(['M', 'F', 'N']);
 const PERSONS = new Set<string>(['1', '2', '3']);
+
+// Normalization maps for full-name grammemes
+const CASE_MAP: Record<CaseName, Case> = {
+  nominative: 'N',
+  genitive: 'G',
+  dative: 'D',
+  accusative: 'A',
+  instrumental: 'I',
+  locative: 'L',
+  vocative: 'H',
+};
+
+const GENDER_MAP: Record<GenderName, Gender> = {
+  masculine: 'M',
+  feminine: 'F',
+  neuter: 'N',
+};
+
+const NUMBER_MAP: Record<NumberName, Num> = {
+  singular: 'S',
+  plural: 'P',
+};
+
+const POS_MAP: Record<PosName, Pos> = {
+  noun: 'N',
+  adjective: 'A',
+  verb: 'V',
+  adverb: 'E',
+  pronoun: 'P',
+  conjunction: 'C',
+  interjection: 'I',
+  particle: 'Z',
+};
+
+const TENSE_MAP: Record<TenseName, Tense> = {
+  present: 'R',
+  past: 'P',
+  future: 'F',
+};
+
+const MOOD_MAP: Record<MoodName, Mood> = {
+  indicative: 'I',
+  imperative: 'M',
+};
 
 /**
  * Decode a form tag string (e.g. "MNS", "R1S", "PFS") into a Grammeme.
@@ -173,4 +235,53 @@ export function matchesGrammeme(grammeme: Grammeme, target: Partial<Grammeme>): 
     }
   }
   return true;
+}
+
+/**
+ * Normalize GrammemeInput to Grammeme by converting full names to short codes.
+ */
+export function normalizeGrammeme(input: GrammemeInput): Partial<Grammeme> {
+  const result: Partial<Grammeme> = {};
+
+  if (input.pos !== undefined) {
+    result.pos = typeof input.pos === 'string' && input.pos in POS_MAP 
+      ? POS_MAP[input.pos as PosName]
+      : input.pos as Pos;
+  }
+
+  if (input.case !== undefined) {
+    result.case = typeof input.case === 'string' && input.case in CASE_MAP 
+      ? CASE_MAP[input.case as CaseName]
+      : input.case as Case;
+  }
+
+  if (input.gender !== undefined) {
+    result.gender = typeof input.gender === 'string' && input.gender in GENDER_MAP 
+      ? GENDER_MAP[input.gender as GenderName]
+      : input.gender as Gender;
+  }
+
+  if (input.number !== undefined) {
+    result.number = typeof input.number === 'string' && input.number in NUMBER_MAP 
+      ? NUMBER_MAP[input.number as NumberName]
+      : input.number as Num;
+  }
+
+  if (input.person !== undefined) {
+    result.person = input.person;
+  }
+
+  if (input.tense !== undefined) {
+    result.tense = typeof input.tense === 'string' && input.tense in TENSE_MAP 
+      ? TENSE_MAP[input.tense as TenseName]
+      : input.tense as Tense;
+  }
+
+  if (input.mood !== undefined) {
+    result.mood = typeof input.mood === 'string' && input.mood in MOOD_MAP 
+      ? MOOD_MAP[input.mood as MoodName]
+      : input.mood as Mood;
+  }
+
+  return result;
 }

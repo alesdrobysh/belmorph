@@ -1,5 +1,5 @@
-import type { Grammeme } from './tags.js';
-import { decodeFormTag, posFromParadigmTag, matchesGrammeme } from './tags.js';
+import type { Grammeme, GrammemeInput } from './tags.js';
+import { decodeFormTag, posFromParadigmTag, matchesGrammeme, normalizeGrammeme } from './tags.js';
 import type { ParadigmEntry, Paradigm } from './data-loader.js';
 
 export class ParseResult {
@@ -46,8 +46,9 @@ export class ParseResult {
    * Inflect to a target set of grammemes.
    * Returns a new ParseResult for the matching form, or null if not found.
    */
-  inflect(target: Partial<Grammeme>): ParseResult | null {
+  inflect(target: GrammemeInput): ParseResult | null {
     const { _stem: stem, _paradigm: paradigm, _tagTable: tagTable } = this;
+    const normalizedTarget = normalizeGrammeme(target);
 
     for (let i = 0; i < paradigm.entries.length; i++) {
       const formTag = tagTable[paradigm.entries[i].tagId];
@@ -55,7 +56,7 @@ export class ParseResult {
       const pos = posFromParadigmTag(paradigm.paradigmTag);
       if (pos) grammeme.pos = pos;
 
-      if (matchesGrammeme(grammeme, target)) {
+      if (matchesGrammeme(grammeme, normalizedTarget)) {
         const form = stem + paradigm.entries[i].suffix;
         return new ParseResult(form, stem, paradigm, i, tagTable, this.predicted);
       }

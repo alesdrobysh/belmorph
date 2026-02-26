@@ -86,3 +86,38 @@ describe('ParseResult.lexeme', () => {
     expect(words).toContain('гарадоў');
   });
 });
+
+describe('Full name grammeme support', () => {
+  it('inflects горад to instrumental plural using full names', () => {
+    const city = morph.parse('горад')[0];
+    const inflected = city.inflect({ case: 'instrumental', number: 'plural' });
+    expect(inflected).not.toBeNull();
+    expect(inflected!.word).toBe('гарадамі');
+  });
+
+  it('inflects горад to genitive singular using full names', () => {
+    const city = morph.parse('горад')[0];
+    const inflected = city.inflect({ case: 'genitive', number: 'singular' });
+    expect(inflected).not.toBeNull();
+    expect(inflected!.word).toBe('горада');
+  });
+
+  it('inflects with mixed short and full names', () => {
+    const city = morph.parse('горад')[0];
+    const inflected1 = city.inflect({ case: 'instrumental', number: 'P' });
+    const inflected2 = city.inflect({ case: 'I', number: 'plural' });
+    expect(inflected1).not.toBeNull();
+    expect(inflected2).not.toBeNull();
+    expect(inflected1!.word).toBe('гарадамі');
+    expect(inflected2!.word).toBe('гарадамі');
+  });
+
+  it('returns same result for short codes and full names', () => {
+    const city = morph.parse('горад')[0];
+    const shortResult = city.inflect({ case: 'I', number: 'P' });
+    const fullResult = city.inflect({ case: 'instrumental', number: 'plural' });
+    expect(shortResult).not.toBeNull();
+    expect(fullResult).not.toBeNull();
+    expect(shortResult!.word).toBe(fullResult!.word);
+  });
+});

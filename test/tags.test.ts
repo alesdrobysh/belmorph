@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decodeFormTag, posFromParadigmTag, matchesGrammeme } from '../src/tags.js';
+import { decodeFormTag, posFromParadigmTag, matchesGrammeme, normalizeGrammeme } from '../src/tags.js';
 
 describe('decodeFormTag', () => {
   it('decodes nominal tags with gender', () => {
@@ -66,5 +66,23 @@ describe('matchesGrammeme', () => {
     expect(matchesGrammeme(g, { case: 'I', number: 'P' })).toBe(true);
     expect(matchesGrammeme(g, { case: 'G' })).toBe(false);
     expect(matchesGrammeme(g, {})).toBe(true);
+  });
+});
+
+describe('normalizeGrammeme', () => {
+  it('normalizes full names to short codes', () => {
+    expect(normalizeGrammeme({ case: 'instrumental', number: 'plural' })).toEqual({ case: 'I', number: 'P' });
+    expect(normalizeGrammeme({ case: 'genitive', number: 'singular' })).toEqual({ case: 'G', number: 'S' });
+    expect(normalizeGrammeme({ pos: 'noun', gender: 'masculine' })).toEqual({ pos: 'N', gender: 'M' });
+  });
+
+  it('preserves short codes unchanged', () => {
+    expect(normalizeGrammeme({ case: 'I', number: 'P' })).toEqual({ case: 'I', number: 'P' });
+    expect(normalizeGrammeme({ case: 'G', number: 'S' })).toEqual({ case: 'G', number: 'S' });
+  });
+
+  it('handles mixed short codes and full names', () => {
+    expect(normalizeGrammeme({ case: 'instrumental', number: 'P' })).toEqual({ case: 'I', number: 'P' });
+    expect(normalizeGrammeme({ case: 'I', number: 'plural' })).toEqual({ case: 'I', number: 'P' });
   });
 });
