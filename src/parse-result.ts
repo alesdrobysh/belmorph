@@ -9,6 +9,8 @@ export class ParseResult {
   readonly lemma: string;
   /** Decoded grammatical tags */
   readonly tags: Grammeme;
+  /** Whether this result was predicted (true) or exact match (false) */
+  readonly predicted: boolean;
 
   /** @internal */
   private readonly _stem: string;
@@ -23,11 +25,13 @@ export class ParseResult {
     paradigm: Paradigm,
     formIdx: number,
     tagTable: string[],
+    predicted = false,
   ) {
     this.word = word;
     this._stem = stem;
     this._paradigm = paradigm;
     this._tagTable = tagTable;
+    this.predicted = predicted;
     this.lemma = stem + paradigm.lemmaSuffix;
 
     // Decode tags: combine POS from paradigm tag + form grammemes
@@ -53,7 +57,7 @@ export class ParseResult {
 
       if (matchesGrammeme(grammeme, target)) {
         const form = stem + paradigm.entries[i].suffix;
-        return new ParseResult(form, stem, paradigm, i, tagTable);
+        return new ParseResult(form, stem, paradigm, i, tagTable, this.predicted);
       }
     }
 
@@ -69,7 +73,7 @@ export class ParseResult {
 
     for (let i = 0; i < paradigm.entries.length; i++) {
       const form = stem + paradigm.entries[i].suffix;
-      results.push(new ParseResult(form, stem, paradigm, i, tagTable));
+      results.push(new ParseResult(form, stem, paradigm, i, tagTable, this.predicted));
     }
 
     return results;

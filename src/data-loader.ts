@@ -48,7 +48,13 @@ export function loadDict(dictDir: string): DictData {
   const paradigmsBuf = gunzipSync(readFileSync(join(dictDir, 'paradigms.bin.gz')));
   const paradigms = readParadigms(paradigmsBuf, meta.paradigmTags);
 
-  return { dawg, paradigms, tagTable: meta.tagTable };
+  // Load predict trie (gzipped)
+  const predictBuf = gunzipSync(readFileSync(join(dictDir, 'predict.dawg.gz')));
+  const predictDawg = new DawgReader(
+    predictBuf.buffer.slice(predictBuf.byteOffset, predictBuf.byteOffset + predictBuf.byteLength),
+  );
+
+  return { dawg, predictDawg, paradigms, tagTable: meta.tagTable, paradigmCounts: meta.paradigmCounts || [] };
 }
 
 /**
