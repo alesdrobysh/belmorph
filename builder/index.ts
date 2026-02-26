@@ -4,9 +4,9 @@ import { buildTrie } from './compress.js';
 import { buildPredictTrie } from './predict.js';
 import { exportDict } from './export.js';
 
-export function buildDictionary(dbPath: string, outDir: string): void {
-  console.log('Step 1: Extracting words from database...');
-  const rawWords = extractWords(dbPath);
+export async function buildDictionary(grammarDbPath: string, outDir: string): Promise<void> {
+  console.log('Step 1: Extracting words from GrammarDB XML...');
+  const rawWords = await extractWords(grammarDbPath);
   console.log(`  Extracted ${rawWords.length} words`);
 
   console.log('\nStep 2: Analyzing stems and paradigms...');
