@@ -50,7 +50,6 @@ const morph = new MorphAnalyzer(dictPath?: string);
 ```
 
 - `parse(word: string): ParseResult[]` - Parse a word and return all possible analyses
-- `parse(word: string): ParseResult[]` - Parse a word and return all possible analyses
 
 ### ParseResult
 
@@ -60,6 +59,7 @@ Properties:
 - `word: string` - The inflected word form
 - `lemma: string` - The dictionary form
 - `tags: Grammeme` - Grammatical properties
+- `predicted: boolean` - Whether the analysis was predicted (unknown word)
 
 Methods:
 - `inflect(target: Partial<Grammeme>): ParseResult | null` - Inflect to a specific form
@@ -81,13 +81,79 @@ interface Grammeme {
 }
 ```
 
-Available types: `Pos`, `Case`, `Gender`, `Num`, `Person`, `Tense`, `Mood`
+#### Pos
+
+| Value | Meaning |
+|-------|---------|
+| `'N'` | Noun |
+| `'A'` | Adjective |
+| `'V'` | Verb |
+| `'E'` | Adverb |
+| `'P'` | Pronoun |
+| `'C'` | Conjunction |
+| `'I'` | Interjection |
+| `'Z'` | Particle |
+
+#### Case
+
+| Value | Meaning |
+|-------|---------|
+| `'N'` | Nominative |
+| `'G'` | Genitive |
+| `'D'` | Dative |
+| `'A'` | Accusative |
+| `'I'` | Instrumental |
+| `'L'` | Locative |
+| `'H'` | Vocative |
+
+#### Gender
+
+| Value | Meaning |
+|-------|---------|
+| `'M'` | Masculine |
+| `'F'` | Feminine |
+| `'N'` | Neuter |
+
+#### Num
+
+| Value | Meaning |
+|-------|---------|
+| `'S'` | Singular |
+| `'P'` | Plural |
+
+#### Person
+
+| Value | Meaning |
+|-------|---------|
+| `'1'` | First person |
+| `'2'` | Second person |
+| `'3'` | Third person |
+
+#### Tense
+
+| Value | Meaning |
+|-------|---------|
+| `'R'` | Present |
+| `'P'` | Past |
+| `'F'` | Future |
+
+#### Mood
+
+| Value | Meaning |
+|-------|---------|
+| `'I'` | Indicative |
+| `'M'` | Imperative |
 
 ## Building the Dictionary
 
 The library requires a pre-built dictionary. To build it:
 
-1. Ensure you have the `grammardb.sqlite3` database
+1. Ensure the `GrammarDB` submodule is initialized:
+
+```bash
+git submodule update --init
+```
+
 2. Run the dictionary builder:
 
 ```bash
@@ -114,16 +180,25 @@ src/
 ├── dawg/                # DAWG implementation
 └── index.ts             # Main exports
 
-build/
-├── index.ts             # Dictionary builder
-├── extract.ts           # Word extraction
+builder/
+├── index.ts             # Dictionary builder entry point
+├── extract.ts           # Word extraction from GrammarDB XML
 ├── analyze.ts           # Stem analysis
 ├── compress.ts          # DAWG building
 ├── predict.ts           # Prediction trie
+├── tag-map.ts           # GrammarDB tag mapping
 └── export.ts            # File export
+
+dict/
+├── dict.dawg.gz         # Compressed word DAWG
+├── predict.dawg.gz      # Compressed prediction DAWG
+├── paradigms.bin.gz     # Compressed paradigm table
+└── meta.json            # Dictionary metadata
 
 test/
 ├── analyzer.test.ts     # Analyzer tests
+├── builder.test.ts      # Builder tests
+├── predictor.test.ts    # Predictor tests
 ├── dawg.test.ts         # DAWG tests
 └── tags.test.ts         # Tag system tests
 ```
@@ -134,6 +209,5 @@ MIT License
 
 ## Credits
 
-- Based on the original belaz morphological analyzer
-- Uses the Belarusian grammar database
-- Inspired by pymorphy2 (Python) and other morphological analyzers
+- Dictionary data from [GrammarDB](https://github.com/Belarus/GrammarDB) (Aparatčyk project)
+- Inspired by [pymorphy2](https://github.com/pymorphy2/pymorphy2) and other morphological analyzers
