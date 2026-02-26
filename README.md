@@ -205,9 +205,13 @@ test/
 
 ## License
 
-MIT License
+This project is dual-licensed:
+- **Source Code**: [MIT License](LICENSE)
+- **Dictionary Data**: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) (derived from GrammarDB)
+
+See the [LICENSE](LICENSE) file for full details.
 
 ## Credits
 
-- Dictionary data from [GrammarDB](https://github.com/Belarus/GrammarDB) (Aparatčyk project)
-- Inspired by [pymorphy2](https://github.com/pymorphy2/pymorphy2) and other morphological analyzers
+- Dictionary data from [GrammarDB](https://github.com/Belarus/GrammarDB) by Aleś Bułojčyk and contributors.
+- Inspired by [pymorphy2](https://github.com/pymorphy2/pymorphy2) and other morphological analyzers.
