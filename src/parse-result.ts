@@ -1,5 +1,5 @@
 import type { Grammeme, GrammemeInput } from './tags.js';
-import { decodeFormTag, posFromParadigmTag, matchesGrammeme, normalizeGrammeme } from './tags.js';
+import { decodeFormTag, decodeParadigmTag, matchesGrammeme, normalizeGrammeme } from './tags.js';
 import type { ParadigmEntry, Paradigm } from './data-loader.js';
 
 export class ParseResult {
@@ -34,12 +34,11 @@ export class ParseResult {
     this.predicted = predicted;
     this.lemma = stem + paradigm.lemmaSuffix;
 
-    // Decode tags: combine POS from paradigm tag + form grammemes
+    // Decode tags: paradigm supplies pos/aspect/voice; form supplies case/number/gender/tense/mood/person
     const formTag = tagTable[paradigm.entries[formIdx].tagId];
+    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag);
     const formGrammeme = decodeFormTag(formTag);
-    const pos = posFromParadigmTag(paradigm.paradigmTag);
-    this.tags = { ...formGrammeme };
-    if (pos) this.tags.pos = pos;
+    this.tags = { ...paradigmGrammeme, ...formGrammeme };
   }
 
   /**
@@ -50,11 +49,11 @@ export class ParseResult {
     const { _stem: stem, _paradigm: paradigm, _tagTable: tagTable } = this;
     const normalizedTarget = normalizeGrammeme(target);
 
+    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag);
+
     for (let i = 0; i < paradigm.entries.length; i++) {
       const formTag = tagTable[paradigm.entries[i].tagId];
-      const grammeme = decodeFormTag(formTag);
-      const pos = posFromParadigmTag(paradigm.paradigmTag);
-      if (pos) grammeme.pos = pos;
+      const grammeme = { ...paradigmGrammeme, ...decodeFormTag(formTag) };
 
       if (matchesGrammeme(grammeme, normalizedTarget)) {
         const form = stem + paradigm.entries[i].suffix;

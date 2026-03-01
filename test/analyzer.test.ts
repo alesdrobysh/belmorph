@@ -50,6 +50,20 @@ describe('MorphAnalyzer.parse', () => {
     const results = morph.parse('xyzabc');
     expect(results).toEqual([]);
   });
+
+  it('parses пісаць (imperfective verb) with aspect M', () => {
+    const results = morph.parse('пісаць');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].tags.pos).toBe('V');
+    expect(results[0].tags.aspect).toBe('M');
+  });
+
+  it('parses напісаць (perfective verb) with aspect P', () => {
+    const results = morph.parse('напісаць');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].tags.pos).toBe('V');
+    expect(results[0].tags.aspect).toBe('P');
+  });
 });
 
 describe('ParseResult.inflect', () => {
