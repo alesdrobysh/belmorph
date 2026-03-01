@@ -1,6 +1,6 @@
 // Atomic grammeme types — strict unions
 export type Pos = 'N' | 'A' | 'V' | 'E' | 'P' | 'C' | 'I' | 'Z';
-export type Case = 'N' | 'G' | 'D' | 'A' | 'I' | 'L' | 'H';
+export type Case = 'N' | 'G' | 'D' | 'A' | 'I' | 'L' | 'V';
 export type Gender = 'M' | 'F' | 'N';
 export type Num = 'S' | 'P';
 export type Person = '1' | '2' | '3';
@@ -38,7 +38,7 @@ export interface GrammemeInput {
 }
 
 // Valid sets for runtime checking
-const CASES = new Set<string>(['N', 'G', 'D', 'A', 'I', 'L', 'H']);
+const CASES = new Set<string>(['N', 'G', 'D', 'A', 'I', 'L', 'V']);
 const GENDERS = new Set<string>(['M', 'F', 'N']);
 const PERSONS = new Set<string>(['1', '2', '3']);
 
@@ -50,7 +50,7 @@ const CASE_MAP: Record<CaseName, Case> = {
   accusative: 'A',
   instrumental: 'I',
   locative: 'L',
-  vocative: 'H',
+  vocative: 'V',
 };
 
 const GENDER_MAP: Record<GenderName, Gender> = {
@@ -158,8 +158,8 @@ export function decodeFormTag(tag: string): Grammeme {
     return g;
   }
 
-  // Special short tags
-  if (tag === 'P' || tag === 'R' || tag === 'S' || tag === 'VS') {
+  // Special short tags (indeclinable/base forms with no further grammeme info)
+  if (tag === 'P' || tag === 'R' || tag === 'S') {
     return g;
   }
 
@@ -185,14 +185,6 @@ function decodeNominalTag(tag: string): Grammeme {
     return g;
   }
 
-  // Vocative: MHS, FHS, NHS
-  if (tag.length === 3 && GENDERS.has(tag[0]) && tag[1] === 'H') {
-    g.gender = tag[0] as Gender;
-    g.case = 'H';
-    g.number = tag[2] as Num;
-    return g;
-  }
-
   // Plural-only nominal forms (PAP, PDP, PGP, PIP, PLP, PNP)
   if (tag.length === 3 && tag[0] === 'P' && CASES.has(tag[1])) {
     g.number = 'P';
@@ -212,14 +204,16 @@ export function posFromParadigmTag(tag: string): Pos | undefined {
   if (!tag) return undefined;
   const ch = tag[0];
   switch (ch) {
-    case 'N': return 'N';
-    case 'A': return 'A';
-    case 'V': return 'V';
-    case 'E': return 'E';
-    case 'C': return 'C';
-    case 'I': return 'I';
-    case 'M': return 'P'; // M-prefix paradigm tags → pronoun
-    case 'Z': return 'Z';
+    case 'N': return 'N'; // noun (назоўнік)
+    case 'A': return 'A'; // adjective (прыметнік)
+    case 'V': return 'V'; // verb (дзеяслоў)
+    case 'P': return 'A'; // participle (дзеепрыметнік) — declines like adjective
+    case 'R': return 'E'; // adverb (прыслоўе)
+    case 'S': return 'P'; // pronoun (займеннік)
+    case 'C': return 'C'; // conjunction (злучнік)
+    case 'E': return 'Z'; // particle (часціца)
+    case 'Y': return 'I'; // interjection (выклічнік)
+    // M (numeral), I (preposition), W, Z — not represented in Pos
     default: return undefined;
   }
 }

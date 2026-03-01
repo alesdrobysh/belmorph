@@ -40,19 +40,30 @@ describe('decodeFormTag', () => {
     expect(decodeFormTag('0GP')).toEqual({ case: 'G', number: 'P' });
   });
 
+  it('decodes short predicative participle forms (no case)', () => {
+    expect(decodeFormTag('MHS')).toEqual({ gender: 'M', number: 'S' });
+    expect(decodeFormTag('FHS')).toEqual({ gender: 'F', number: 'S' });
+    expect(decodeFormTag('NHS')).toEqual({ gender: 'N', number: 'S' });
+  });
+
   it('decodes vocative', () => {
-    expect(decodeFormTag('MHS')).toEqual({ gender: 'M', case: 'H', number: 'S' });
+    expect(decodeFormTag('VS')).toEqual({ case: 'V', number: 'S' });
   });
 });
 
 describe('posFromParadigmTag', () => {
   it('decodes POS from paradigm tag prefix', () => {
-    expect(posFromParadigmTag('NCIINM1')).toBe('N');
-    expect(posFromParadigmTag('ARP')).toBe('A');
-    expect(posFromParadigmTag('VDMN1')).toBe('V');
-    expect(posFromParadigmTag('E')).toBe('E');
-    expect(posFromParadigmTag('I')).toBe('I');
-    expect(posFromParadigmTag('MACS')).toBe('P');
+    expect(posFromParadigmTag('NCIINM1')).toBe('N'); // noun
+    expect(posFromParadigmTag('ARP')).toBe('A');      // adjective
+    expect(posFromParadigmTag('VDMN1')).toBe('V');    // verb
+    expect(posFromParadigmTag('PAPM')).toBe('A');     // participle → adjective
+    expect(posFromParadigmTag('RA')).toBe('E');        // adverb
+    expect(posFromParadigmTag('SNE0')).toBe('P');      // pronoun
+    expect(posFromParadigmTag('CKX')).toBe('C');       // conjunction
+    expect(posFromParadigmTag('E')).toBe('Z');         // particle
+    expect(posFromParadigmTag('Y')).toBe('I');         // interjection
+    expect(posFromParadigmTag('MACS')).toBeUndefined(); // numeral — no Pos code
+    expect(posFromParadigmTag('I')).toBeUndefined();    // preposition — no Pos code
   });
 
   it('returns undefined for empty tag', () => {

@@ -139,7 +139,7 @@ export async function extractWords(grammarDbPath: string): Promise<RawWord[]> {
     'N1.xml', 'N2.xml', 'N3.xml', // Nouns
     'V.xml',                      // Verbs
     'A1.xml', 'A2.xml',           // Adjectives
-    'P.xml',                      // Pronouns
+    'P.xml',                      // Participles
     'R.xml',                      // Adverbs
     'NP.xml',                     // Proper nouns
     'C.xml',                      // Conjunctions

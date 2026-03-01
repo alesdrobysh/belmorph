@@ -5,7 +5,7 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const grammarDbPath = resolve(projectRoot, "GrammarDB", "data");
 const outDir = resolve(projectRoot, "dict");
 
-console.log("Building belaz dictionary...");
+console.log("Building belmorph dictionary...");
 console.log(`  GrammarDB: ${grammarDbPath}`);
 console.log(`  Output: ${outDir}`);
 console.log("");
