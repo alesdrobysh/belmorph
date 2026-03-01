@@ -16,13 +16,15 @@ export type Pos =
   | "W"
   | "F";
 export type Case = "N" | "G" | "D" | "A" | "I" | "L" | "V";
-export type Gender = "M" | "F" | "N";
+export type Gender = "M" | "F" | "N" | "C"; // C=common gender (агульны род)
 export type Num = "S" | "P";
-export type Person = "1" | "2" | "3";
-export type Tense = "R" | "P" | "F";
+export type Person = "1" | "2" | "3" | "0"; // 0=impersonal (безасабовая форма)
+export type Tense = "R" | "P" | "F" | "Q"; // Q=pluperfect (перадпрошлы час)
 export type Mood = "I" | "M";
 export type Aspect = "P" | "M"; // P=perfective, M=imperfective (GrammarDB codes)
 export type Voice = "A" | "P"; // A=active, P=passive
+export type Animacy = "A" | "I"; // A=animate, I=inanimate (адушаўлёнасць)
+export type Comparison = "P" | "C" | "S"; // P=positive, C=comparative, S=superlative
 
 // Full-name grammeme types for better readability
 export type CaseName =
@@ -33,7 +35,7 @@ export type CaseName =
   | "instrumental"
   | "locative"
   | "vocative";
-export type GenderName = "masculine" | "feminine" | "neuter";
+export type GenderName = "masculine" | "feminine" | "neuter" | "common";
 export type NumberName = "singular" | "plural";
 export type PosName =
   | "noun"
@@ -50,10 +52,12 @@ export type PosName =
   | "parenthetical"
   | "predicative"
   | "word-part";
-export type TenseName = "present" | "past" | "future";
+export type TenseName = "present" | "past" | "future" | "pluperfect";
 export type MoodName = "indicative" | "imperative";
 export type AspectName = "perfective" | "imperfective";
 export type VoiceName = "active" | "passive";
+export type AnimacyName = "animate" | "inanimate";
+export type ComparisonName = "positive" | "comparative" | "superlative";
 
 export interface Grammeme {
   pos?: Pos;
@@ -65,6 +69,8 @@ export interface Grammeme {
   mood?: Mood;
   aspect?: Aspect;
   voice?: Voice;
+  animacy?: Animacy;
+  comparison?: Comparison;
 }
 
 export interface GrammemeInput {
@@ -77,12 +83,14 @@ export interface GrammemeInput {
   mood?: Mood | MoodName;
   aspect?: Aspect | AspectName;
   voice?: Voice | VoiceName;
+  animacy?: Animacy | AnimacyName;
+  comparison?: Comparison | ComparisonName;
 }
 
 // Valid sets for runtime checking
 const CASES = new Set<string>(["N", "G", "D", "A", "I", "L", "V"]);
-const GENDERS = new Set<string>(["M", "F", "N"]);
-const PERSONS = new Set<string>(["1", "2", "3"]);
+const GENDERS = new Set<string>(["M", "F", "N", "C"]); // C=common gender
+const PERSONS = new Set<string>(["1", "2", "3", "0"]); // 0=impersonal
 
 // Normalization maps for full-name grammemes
 const CASE_MAP: Record<CaseName, Case> = {
@@ -99,6 +107,7 @@ const GENDER_MAP: Record<GenderName, Gender> = {
   masculine: "M",
   feminine: "F",
   neuter: "N",
+  common: "C",
 };
 
 const NUMBER_MAP: Record<NumberName, Num> = {
@@ -127,6 +136,7 @@ const TENSE_MAP: Record<TenseName, Tense> = {
   present: "R",
   past: "P",
   future: "F",
+  pluperfect: "Q",
 };
 
 const MOOD_MAP: Record<MoodName, Mood> = {
@@ -142,6 +152,17 @@ const ASPECT_MAP: Record<AspectName, Aspect> = {
 const VOICE_MAP: Record<VoiceName, Voice> = {
   active: "A",
   passive: "P",
+};
+
+const ANIMACY_MAP: Record<AnimacyName, Animacy> = {
+  animate: "A",
+  inanimate: "I",
+};
+
+const COMPARISON_MAP: Record<ComparisonName, Comparison> = {
+  positive: "P",
+  comparative: "C",
+  superlative: "S",
 };
 
 /**
@@ -166,7 +187,8 @@ export function decodeFormTag(tag: string): Grammeme {
   }
 
   if (tag === "C") {
-    // comparative
+    // comparative degree form (e.g. хутчэй)
+    g.comparison = "C";
     return g;
   }
 
@@ -292,10 +314,14 @@ export function decodeParadigmTag(tag: string): Grammeme {
   const pos = posFromParadigmTag(tag);
   if (pos) g.pos = pos;
 
-  // Verb: V[transitivity][aspect][reflexivity][conjugation]
-  if (pos === "V" && tag.length > 2) {
-    const asp = tag[2];
-    if (asp === "P" || asp === "M") g.aspect = asp;
+  // Verb: V[+?][transitivity][aspect][reflexivity][conjugation]
+  // '+' at position 1 is a "new word" marker — aspect shifts one position right
+  if (pos === "V") {
+    const aspIdx = tag[1] === "+" ? 3 : 2;
+    if (tag.length > aspIdx) {
+      const asp = tag[aspIdx];
+      if (asp === "P" || asp === "M") g.aspect = asp;
+    }
   }
 
   // Participle: P[voice][tense][aspect]
@@ -306,6 +332,27 @@ export function decodeParadigmTag(tag: string): Grammeme {
       const asp = tag[3];
       if (asp === "P" || asp === "M") g.aspect = asp;
     }
+  }
+
+  // Noun: N[category][class][animacy][gender][...]
+  // Animacy is encoded at position 3 (0-indexed)
+  if (pos === "N" && tag.length > 3) {
+    const anim = tag[3];
+    if (anim === "A" || anim === "I") g.animacy = anim;
+  }
+
+  // Adjective: A[type][class][comparison]
+  // Comparison degree is encoded at position 2 (0-indexed)
+  if (pos === "A" && tag.length > 2) {
+    const comp = tag[2];
+    if (comp === "P" || comp === "C" || comp === "S") g.comparison = comp;
+  }
+
+  // Adverb: R[comparison]
+  // Comparison degree is encoded at position 1 (0-indexed)
+  if (pos === "R" && tag.length > 1) {
+    const comp = tag[1];
+    if (comp === "P" || comp === "C" || comp === "S") g.comparison = comp;
   }
 
   return g;
@@ -391,6 +438,20 @@ export function normalizeGrammeme(input: GrammemeInput): Partial<Grammeme> {
       typeof input.voice === "string" && input.voice in VOICE_MAP
         ? VOICE_MAP[input.voice as VoiceName]
         : (input.voice as Voice);
+  }
+
+  if (input.animacy !== undefined) {
+    result.animacy =
+      typeof input.animacy === "string" && input.animacy in ANIMACY_MAP
+        ? ANIMACY_MAP[input.animacy as AnimacyName]
+        : (input.animacy as Animacy);
+  }
+
+  if (input.comparison !== undefined) {
+    result.comparison =
+      typeof input.comparison === "string" && input.comparison in COMPARISON_MAP
+        ? COMPARISON_MAP[input.comparison as ComparisonName]
+        : (input.comparison as Comparison);
   }
 
   return result;

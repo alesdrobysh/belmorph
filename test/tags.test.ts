@@ -19,6 +19,10 @@ describe('decodeFormTag', () => {
     expect(decodeFormTag('R3P')).toEqual({ tense: 'R', person: '3', number: 'P', mood: 'I' });
   });
 
+  it('decodes impersonal verb form (person 0, світае)', () => {
+    expect(decodeFormTag('R0S')).toEqual({ tense: 'R', person: '0', number: 'S', mood: 'I' });
+  });
+
   it('decodes verb future tense with indicative mood', () => {
     expect(decodeFormTag('F1S')).toEqual({ tense: 'F', person: '1', number: 'S', mood: 'I' });
     expect(decodeFormTag('F3P')).toEqual({ tense: 'F', person: '3', number: 'P', mood: 'I' });
@@ -40,6 +44,10 @@ describe('decodeFormTag', () => {
     expect(decodeFormTag('')).toEqual({});
   });
 
+  it('decodes comparative form tag (хутчэй)', () => {
+    expect(decodeFormTag('C')).toEqual({ comparison: 'C' });
+  });
+
   it('decodes gerund without mood', () => {
     expect(decodeFormTag('RG')).toEqual({});
   });
@@ -57,6 +65,12 @@ describe('decodeFormTag', () => {
 
   it('decodes vocative', () => {
     expect(decodeFormTag('VS')).toEqual({ case: 'V', number: 'S' });
+  });
+
+  it('decodes common gender nominal forms (сірата)', () => {
+    expect(decodeFormTag('CNS')).toEqual({ gender: 'C', case: 'N', number: 'S' });
+    expect(decodeFormTag('CGS')).toEqual({ gender: 'C', case: 'G', number: 'S' });
+    expect(decodeFormTag('CIP')).toEqual({ gender: 'C', case: 'I', number: 'P' });
   });
 });
 
@@ -81,8 +95,9 @@ describe('posFromParadigmTag', () => {
 });
 
 describe('decodeParadigmTag', () => {
-  it('decodes noun — no aspect or voice', () => {
-    expect(decodeParadigmTag('NCIINM1')).toEqual({ pos: 'N' });
+  it('decodes noun with animacy at position 3', () => {
+    expect(decodeParadigmTag('NCIINM1')).toEqual({ pos: 'N', animacy: 'I' });
+    expect(decodeParadigmTag('NCIANM1')).toEqual({ pos: 'N', animacy: 'A' });
   });
 
   it('decodes perfective verb', () => {
@@ -101,12 +116,16 @@ describe('decodeParadigmTag', () => {
     expect(decodeParadigmTag('PPPP')).toEqual({ pos: 'P', voice: 'P', aspect: 'P' });
   });
 
-  it('decodes adjective — no aspect or voice', () => {
-    expect(decodeParadigmTag('ARP')).toEqual({ pos: 'A' });
+  it('decodes adjective with comparison degree at position 2', () => {
+    expect(decodeParadigmTag('ARP')).toEqual({ pos: 'A', comparison: 'P' });
+    expect(decodeParadigmTag('ARC')).toEqual({ pos: 'A', comparison: 'C' });
+    expect(decodeParadigmTag('ARS')).toEqual({ pos: 'A', comparison: 'S' });
   });
 
-  it('decodes adverb — no aspect or voice', () => {
-    expect(decodeParadigmTag('RA')).toEqual({ pos: 'R' });
+  it('decodes adverb — comparison at position 1 if present', () => {
+    expect(decodeParadigmTag('RA')).toEqual({ pos: 'R' }); // 'A' is not a comparison code
+    expect(decodeParadigmTag('RC')).toEqual({ pos: 'R', comparison: 'C' });
+    expect(decodeParadigmTag('RS')).toEqual({ pos: 'R', comparison: 'S' });
   });
 
   it('handles short special-case verb tags gracefully', () => {
@@ -172,5 +191,37 @@ describe('normalizeGrammeme', () => {
     expect(normalizeGrammeme({ pos: 'interjection' })).toEqual({ pos: 'Y' });
     expect(normalizeGrammeme({ pos: 'numeral' })).toEqual({ pos: 'M' });
     expect(normalizeGrammeme({ pos: 'preposition' })).toEqual({ pos: 'I' });
+  });
+
+  it('normalizes common gender (сірата)', () => {
+    expect(normalizeGrammeme({ gender: 'common' })).toEqual({ gender: 'C' });
+    expect(normalizeGrammeme({ gender: 'C' })).toEqual({ gender: 'C' });
+  });
+
+  it('normalizes pluperfect tense (быў чытаў)', () => {
+    expect(normalizeGrammeme({ tense: 'pluperfect' })).toEqual({ tense: 'Q' });
+    expect(normalizeGrammeme({ tense: 'Q' })).toEqual({ tense: 'Q' });
+  });
+
+  it('normalizes animacy full names', () => {
+    expect(normalizeGrammeme({ animacy: 'animate' })).toEqual({ animacy: 'A' });
+    expect(normalizeGrammeme({ animacy: 'inanimate' })).toEqual({ animacy: 'I' });
+  });
+
+  it('preserves animacy short codes unchanged', () => {
+    expect(normalizeGrammeme({ animacy: 'A' })).toEqual({ animacy: 'A' });
+    expect(normalizeGrammeme({ animacy: 'I' })).toEqual({ animacy: 'I' });
+  });
+
+  it('normalizes comparison full names (хутчэй)', () => {
+    expect(normalizeGrammeme({ comparison: 'positive' })).toEqual({ comparison: 'P' });
+    expect(normalizeGrammeme({ comparison: 'comparative' })).toEqual({ comparison: 'C' });
+    expect(normalizeGrammeme({ comparison: 'superlative' })).toEqual({ comparison: 'S' });
+  });
+
+  it('preserves comparison short codes unchanged', () => {
+    expect(normalizeGrammeme({ comparison: 'P' })).toEqual({ comparison: 'P' });
+    expect(normalizeGrammeme({ comparison: 'C' })).toEqual({ comparison: 'C' });
+    expect(normalizeGrammeme({ comparison: 'S' })).toEqual({ comparison: 'S' });
   });
 });
