@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { MorphAnalyzer } from '../src/analyzer.js';
+import { loadDict } from '../src/node-loader.js';
 import { resolve } from 'node:path';
 
 let morph: MorphAnalyzer;
 
 beforeAll(() => {
-  morph = new MorphAnalyzer(resolve(import.meta.dirname, '..', 'dict'));
+  morph = new MorphAnalyzer(loadDict(resolve(import.meta.dirname, '..', 'dict')));
 });
 
 describe('MorphAnalyzer.parse', () => {

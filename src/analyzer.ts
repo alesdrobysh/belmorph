@@ -1,13 +1,15 @@
-import { join } from 'node:path';
-import { loadDict, type DictData } from './data-loader.js';
+import { loadDictAsync, type DictData } from './data-loader.js';
 import { ParseResult } from './parse-result.js';
 
 export class MorphAnalyzer {
   private dict: DictData;
 
-  constructor(dictPath?: string) {
-    const dictDir = dictPath ?? join(import.meta.dirname, '..', 'dict');
-    this.dict = loadDict(dictDir);
+  constructor(dict: DictData) {
+    this.dict = dict;
+  }
+
+  static async init(baseUrl: string | URL = '/dict/'): Promise<MorphAnalyzer> {
+    return new MorphAnalyzer(await loadDictAsync(baseUrl));
   }
 
   /**
@@ -50,7 +52,7 @@ export class MorphAnalyzer {
    */
   private predict(word: string): ParseResult[] {
     const MAX_SUFFIX = 5;
-    
+
     // Reverse the word and take last MAX_SUFFIX chars
     const chars = Array.from(word);
     const truncated = chars.slice(-MAX_SUFFIX);
@@ -70,7 +72,7 @@ export class MorphAnalyzer {
         const paradigmCount = this.dict.paradigmCounts[paradigmId] || 1;
         // Score: depth (suffix length) + log(paradigm popularity)
         const score = depth + Math.log(paradigmCount);
-        
+
         const existing = candidates.get(key);
         if (!existing || score > existing.score) {
           candidates.set(key, { score, paradigmId, formIdx });

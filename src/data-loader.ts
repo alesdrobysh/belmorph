@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
-import { join } from 'node:path';
 import { DawgReader } from './dawg/dawg-reader.js';
 
 export interface ParadigmEntry {
@@ -22,39 +19,12 @@ export interface DictData {
   paradigmCounts: number[];
 }
 
-interface MetaJson {
+export interface MetaJson {
   version: number;
   tagTable: string[];
   paradigmTags: string[];
   paradigmCount: number;
   paradigmCounts?: number[];
-}
-
-/**
- * Load dictionary files from disk (Node.js only).
- * All binary files are gzip-compressed.
- */
-export function loadDict(dictDir: string): DictData {
-  // Load meta first (needed for paradigm tags)
-  const meta = JSON.parse(readFileSync(join(dictDir, 'meta.json'), 'utf-8')) as MetaJson;
-
-  // Load combined trie+payload (gzipped)
-  const dawgBuf = gunzipSync(readFileSync(join(dictDir, 'dict.dawg.gz')));
-  const dawg = new DawgReader(
-    dawgBuf.buffer.slice(dawgBuf.byteOffset, dawgBuf.byteOffset + dawgBuf.byteLength),
-  );
-
-  // Load paradigms (gzipped) — enhanced format with paradigmTag and lemmaSuffix
-  const paradigmsBuf = gunzipSync(readFileSync(join(dictDir, 'paradigms.bin.gz')));
-  const paradigms = readParadigms(paradigmsBuf, meta.paradigmTags);
-
-  // Load predict trie (gzipped)
-  const predictBuf = gunzipSync(readFileSync(join(dictDir, 'predict.dawg.gz')));
-  const predictDawg = new DawgReader(
-    predictBuf.buffer.slice(predictBuf.byteOffset, predictBuf.byteOffset + predictBuf.byteLength),
-  );
-
-  return { dawg, predictDawg, paradigms, tagTable: meta.tagTable, paradigmCounts: meta.paradigmCounts || [] };
 }
 
 /**
@@ -66,9 +36,11 @@ export function loadDict(dictDir: string): DictData {
  *     [entryCount: uint16]
  *     Per entry: [tagId: uint16] [suffixLen: uint8] [suffix: bytes]
  */
-function readParadigms(buf: Buffer, paradigmTags: string[]): Paradigm[] {
+export function readParadigms(buf: Uint8Array, paradigmTags: string[]): Paradigm[] {
+  const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const decoder = new TextDecoder();
   let pos = 0;
-  const count = buf.readUInt32LE(pos); pos += 4;
+  const count = view.getUint32(pos, true); pos += 4;
   const paradigms: Paradigm[] = new Array(count);
 
   for (let i = 0; i < count; i++) {
@@ -76,16 +48,16 @@ function readParadigms(buf: Buffer, paradigmTags: string[]): Paradigm[] {
     const paradigmTag = paradigmTags[paradigmTagIdx];
 
     const lemmaSuffixLen = buf[pos++];
-    const lemmaSuffix = buf.subarray(pos, pos + lemmaSuffixLen).toString('utf-8');
+    const lemmaSuffix = decoder.decode(buf.subarray(pos, pos + lemmaSuffixLen));
     pos += lemmaSuffixLen;
 
-    const entryCount = buf.readUInt16LE(pos); pos += 2;
+    const entryCount = view.getUint16(pos, true); pos += 2;
     const entries: ParadigmEntry[] = new Array(entryCount);
 
     for (let j = 0; j < entryCount; j++) {
-      const tagId = buf.readUInt16LE(pos); pos += 2;
+      const tagId = view.getUint16(pos, true); pos += 2;
       const suffixLen = buf[pos++];
-      const suffix = buf.subarray(pos, pos + suffixLen).toString('utf-8');
+      const suffix = decoder.decode(buf.subarray(pos, pos + suffixLen));
       pos += suffixLen;
       entries[j] = { tagId, suffix };
     }
@@ -94,4 +66,32 @@ function readParadigms(buf: Buffer, paradigmTags: string[]): Paradigm[] {
   }
 
   return paradigms;
+}
+
+async function decompressGzip(response: Response): Promise<Uint8Array> {
+  const stream = response.body!.pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/**
+ * Load dictionary files from a URL base (browser, Deno, Node.js 18+).
+ * Fetches and decompresses all dict files using the Fetch API.
+ */
+export async function loadDictAsync(baseUrl: string | URL = '/dict/'): Promise<DictData> {
+  const base = baseUrl.toString().replace(/\/?$/, '/');
+  const [meta, dawgBuf, paradigmsBuf, predictBuf] = await Promise.all([
+    fetch(base + 'meta.json').then(r => r.json() as Promise<MetaJson>),
+    fetch(base + 'dict.dawg.gz').then(decompressGzip),
+    fetch(base + 'paradigms.bin.gz').then(decompressGzip),
+    fetch(base + 'predict.dawg.gz').then(decompressGzip),
+  ]);
+  const dawg = new DawgReader(dawgBuf.buffer as ArrayBuffer);
+  const predictDawg = new DawgReader(predictBuf.buffer as ArrayBuffer);
+  return {
+    dawg,
+    predictDawg,
+    paradigms: readParadigms(paradigmsBuf, meta.paradigmTags),
+    tagTable: meta.tagTable,
+    paradigmCounts: meta.paradigmCounts ?? [],
+  };
 }

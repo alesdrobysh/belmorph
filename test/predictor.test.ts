@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { MorphAnalyzer } from "../src/index.js";
+import { loadDict } from "../src/node-loader.js";
+import { resolve } from "node:path";
 
-const analyzer = new MorphAnalyzer();
+const analyzer = new MorphAnalyzer(loadDict(resolve(import.meta.dirname, '..', 'dict')));
 
 describe("predictor", () => {
   it("returns empty array for unknown non-Slavic words", () => {
