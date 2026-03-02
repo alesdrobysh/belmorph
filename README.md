@@ -6,6 +6,8 @@
 
 A fast, lightweight library for analyzing Belarusian words and their morphological properties.
 
+[Demo](https://alesdrobysh.github.io/belmorph/)
+
 ## Features
 
 - **Morphological analysis**: Parse words to determine part of speech, case, gender, number, tense, aspect, animacy, comparison degree, and other grammatical properties
