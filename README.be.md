@@ -26,10 +26,13 @@ npm install belmorph
 
 ## Хуткі старт
 
+### Node.js — файлавая сістэма (убудаваны слоўнік)
+
 ```typescript
 import { MorphAnalyzer } from 'belmorph';
+import { loadDict } from 'belmorph/node';
 
-const morph = new MorphAnalyzer();
+const morph = new MorphAnalyzer(loadDict()); // выкарыстоўвае ўбудаваны dict/
 const results = morph.parse('горад');
 
 console.log(results[0].lemma);    // 'горад'
@@ -46,9 +49,32 @@ const lexeme = results[0].lexeme;
 console.log(lexeme.map(r => r.word));
 ```
 
+### Браўзер / Deno / Node.js — HTTP
+
+```typescript
+import { MorphAnalyzer } from 'belmorph';
+
+// Раздавайце папку dict/ як статычныя файлы і ўкажыце на яе:
+const morph = await MorphAnalyzer.init('/dict/');
+// або з CDN:
+const morph = await MorphAnalyzer.init('https://cdn.example.com/dict/');
+
+const results = morph.parse('горад');
+```
+
 Калі слова не знойдзена ў слоўніку, аналізатар выкарыстоўвае прадказанне на аснове суфіксаў. Такія вынікі маюць `predicted: true` і могуць быць менш дакладнымі.
 
 ## API
+
+### Загрузка
+
+| Метад | Асяроддзе | Апісанне |
+|-------|-----------|----------|
+| `new MorphAnalyzer(dict)` | усюды | Канструктар, які прымае гатовы аб'ект `DictData` |
+| `MorphAnalyzer.init(baseUrl?)` | усюды | Асінхронная фабрыка — загружае і распакоўвае файлы слоўніка праз HTTP. Базавы URL па змоўчанні: `'/dict/'` |
+| `loadDict(dir?)` з `belmorph/node` | толькі Node.js | Сінхронная загрузка з файлавай сістэмы. Па змоўчанні выкарыстоўвае ўбудаваны `dict/` |
+
+### ParseResult
 
 `MorphAnalyzer.parse(word)` вяртае масіў аб'ектаў `ParseResult`. Кожны вынік мае:
 

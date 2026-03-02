@@ -26,10 +26,13 @@ npm install belmorph
 
 ## Quick Start
 
+### Node.js — filesystem (bundled dictionary)
+
 ```typescript
 import { MorphAnalyzer } from 'belmorph';
+import { loadDict } from 'belmorph/node';
 
-const morph = new MorphAnalyzer();
+const morph = new MorphAnalyzer(loadDict()); // uses bundled dict/
 const results = morph.parse('горад');
 
 console.log(results[0].lemma);    // 'горад'
@@ -46,9 +49,32 @@ const lexeme = results[0].lexeme;
 console.log(lexeme.map(r => r.word));
 ```
 
+### Browser / Deno / Node.js — HTTP
+
+```typescript
+import { MorphAnalyzer } from 'belmorph';
+
+// Serve the dict/ folder as static files and point to it:
+const morph = await MorphAnalyzer.init('/dict/');
+// or from a CDN:
+const morph = await MorphAnalyzer.init('https://cdn.example.com/dict/');
+
+const results = morph.parse('горад');
+```
+
 When a word is not found in the dictionary, the analyzer falls back to suffix-based prediction — those results have `predicted: true` and may be less accurate.
 
 ## API
+
+### Loading
+
+| Method | Environment | Description |
+|--------|-------------|-------------|
+| `new MorphAnalyzer(dict)` | all | Construct from a pre-loaded `DictData` object |
+| `MorphAnalyzer.init(baseUrl?)` | all | Async factory — fetches and decompresses dict files over HTTP. Default base URL: `'/dict/'` |
+| `loadDict(dir?)` from `belmorph/node` | Node.js only | Synchronous filesystem load. Defaults to the bundled `dict/` |
+
+### ParseResult
 
 `MorphAnalyzer.parse(word)` returns an array of `ParseResult` objects. Each result has:
 
