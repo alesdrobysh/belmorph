@@ -1,9 +1,25 @@
 {
   "name": "belmorph",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zero-dependency Belarusian morphological analyzer",
   "license": "(MIT AND CC-BY-SA-4.0)",
-  "author": "",
+  "author": "Ales Drobysh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alesdrobysh/belmorph.git"
+  },
+  "homepage": "https://github.com/alesdrobysh/belmorph#readme",
+  "bugs": {
+    "url": "https://github.com/alesdrobysh/belmorph/issues"
+  },
+  "keywords": [
+    "belarusian",
+    "morphology",
+    "nlp",
+    "linguistics",
+    "lemmatizer",
+    "inflection"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
