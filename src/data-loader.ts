@@ -69,6 +69,11 @@ export function readParadigms(buf: Uint8Array, paradigmTags: string[]): Paradigm
 }
 
 async function decompressGzip(response: Response): Promise<Uint8Array> {
+  // If the server set Content-Encoding: gzip, the browser already decompressed
+  // the body transparently before JS sees it — skip DecompressionStream.
+  if (response.headers.get('content-encoding')?.includes('gzip')) {
+    return new Uint8Array(await response.arrayBuffer());
+  }
   const stream = response.body!.pipeThrough(new DecompressionStream('gzip'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }

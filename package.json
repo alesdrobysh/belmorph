@@ -6,7 +6,7 @@
   "author": "Ales Drobysh",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alesdrobysh/belmorph.git"
+    "url": "git+https://github.com/alesdrobysh/belmorph.git"
   },
   "homepage": "https://github.com/alesdrobysh/belmorph#readme",
   "bugs": {
