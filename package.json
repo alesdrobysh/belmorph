@@ -1,6 +1,6 @@
 {
   "name": "belmorph",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-dependency Belarusian morphological analyzer",
   "license": "(MIT AND CC-BY-SA-4.0)",
   "author": "Ales Drobysh",

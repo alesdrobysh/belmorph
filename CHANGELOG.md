@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.1] - 2026-03-03
+
+### Added
+- Add automated release script
+- Add changelog files
+
+### Changed
+- Implement dark mode and UI enhancements on the demo page
+
+### Fixed
+- Improve default dictionary directory resolution
+
+
 ## [Unreleased]
 
 ### Added
