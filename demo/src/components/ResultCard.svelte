@@ -1,50 +1,57 @@
 <script lang="ts">
   import type { ParseResult } from 'belmorph';
-  import { POS, CASE, NUMBER, GENDER, PERSON, TENSE, MOOD, ANIMACY, ASPECT, VOICE, COMPARISON } from '../lib/i18n.js';
+  import { appState } from '../lib/lang.svelte.js';
+  import { LABELS, UI } from '../lib/i18n.js';
+  import { cap } from '../lib/utils.js';
+
+  const i18n = $derived(LABELS[appState.lang]);
+  const ui = $derived(UI[appState.lang]);
   import InflectionPanel from './InflectionPanel.svelte';
   import LexemeTable from './LexemeTable.svelte';
 
   let { result }: { result: ParseResult } = $props();
 
-  function tagPills(tags: ParseResult['tags']) {
-    const pills: string[] = [];
-    if (tags.animacy) pills.push(ANIMACY[tags.animacy] ?? tags.animacy);
-    if (tags.aspect) pills.push(ASPECT[tags.aspect] ?? tags.aspect);
-    if (tags.voice) pills.push(VOICE[tags.voice] ?? tags.voice);
-    if (tags.comparison) pills.push(COMPARISON[tags.comparison] ?? tags.comparison);
-    if (tags.mood) pills.push(MOOD[tags.mood] ?? tags.mood);
-    if (tags.tense) pills.push(TENSE[tags.tense] ?? tags.tense);
-    if (tags.person) pills.push(PERSON[tags.person] ?? tags.person);
-    if (tags.gender) pills.push(GENDER[tags.gender] ?? tags.gender);
-    if (tags.number) pills.push(NUMBER[tags.number] ?? tags.number);
-    if (tags.case) pills.push(CASE[tags.case] ?? tags.case);
-    return pills;
+  type TagEntry = { label: string; value: string };
+
+  function buildTags(tags: ParseResult['tags']): TagEntry[] {
+    const t: TagEntry[] = [];
+    if (tags.pos)        t.push({ label: ui.posLabel,      value: cap(i18n.POS[tags.pos] ?? tags.pos) });
+    if (tags.case)       t.push({ label: ui.case,          value: i18n.CASE[tags.case] ?? tags.case });
+    if (tags.number)     t.push({ label: ui.number,        value: i18n.NUMBER[tags.number] ?? tags.number });
+    if (tags.gender)     t.push({ label: ui.gender,        value: cap(i18n.GENDER[tags.gender] ?? tags.gender) });
+    if (tags.animacy)    t.push({ label: ui.animacyLabel,  value: i18n.ANIMACY[tags.animacy] ?? tags.animacy });
+    if (tags.tense)      t.push({ label: ui.tense,         value: i18n.TENSE[tags.tense] ?? tags.tense });
+    if (tags.person)     t.push({ label: ui.person,        value: i18n.PERSON[tags.person] ?? tags.person });
+    if (tags.aspect)     t.push({ label: ui.aspectLabel,   value: cap(i18n.ASPECT[tags.aspect] ?? tags.aspect) });
+    if (tags.voice)      t.push({ label: ui.voice,         value: cap(i18n.VOICE[tags.voice] ?? tags.voice) });
+    if (tags.mood)       t.push({ label: ui.moodLabel,     value: cap(i18n.MOOD[tags.mood] ?? tags.mood) });
+    if (tags.comparison) t.push({ label: ui.comparison,    value: cap(i18n.COMPARISON[tags.comparison] ?? tags.comparison) });
+    return t;
   }
 
-  let pills = $derived(tagPills(result.tags));
-  let posLabel = $derived(result.tags.pos ? (POS[result.tags.pos] ?? result.tags.pos) : '');
+  const tags = $derived(buildTags(result.tags));
 </script>
 
 <div class="card">
   <div class="word-heading">
     <span class="word-form">{result.word}</span>
     {#if result.predicted}
-      <span class="predicted-badge">(прадказана)</span>
+      <span class="predicted-badge">({ui.predicted})</span>
     {/if}
+  </div>
+
+  <div class="lemma-line">
+    <span class="tag-label">{ui.lema}:&nbsp;</span><span class="lemma-value">{result.lemma}</span>
   </div>
 
   <div class="tags-row">
-    {#if posLabel}
-      <span class="pill pill-pos">{posLabel}</span>
-    {/if}
-    {#each pills as pill}
-      <span class="pill pill-gray">{pill}</span>
+    {#each tags as tag}
+      <span class="tag-pill">
+        <span class="tag-label">{tag.label}</span>
+        <span class="tag-value">{tag.value}</span>
+      </span>
     {/each}
   </div>
-
-  {#if result.lemma !== result.word}
-    <div class="lemma-row">форма слова <span>{result.lemma}</span></div>
-  {/if}
 
   <InflectionPanel {result} />
 

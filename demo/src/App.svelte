@@ -5,6 +5,10 @@
     import type { ParseResult } from "belmorph";
     import SearchInput from "./components/SearchInput.svelte";
     import ResultsView from "./components/ResultsView.svelte";
+    import { appState } from "./lib/lang.svelte.js";
+    import { UI } from "./lib/i18n.js";
+
+    const ui = $derived(UI[appState.lang]);
 
     const EXAMPLES = [
         "кніга",
@@ -25,6 +29,23 @@
     let results = $state<ParseResult[]>([]);
     let searched = $state(false);
     let searchWord = $state("");
+
+    $effect(() => {
+        const root = document.documentElement;
+        if (appState.theme === 'system') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', appState.theme);
+    });
+
+    function cycleTheme() {
+        appState.theme =
+            appState.theme === 'system' ? 'light'
+            : appState.theme === 'light' ? 'dark'
+            : 'system';
+    }
+
+    const themeIcon = $derived(
+        appState.theme === 'light' ? '☀' : appState.theme === 'dark' ? '☽' : '◐'
+    );
 
     onMount(async () => {
         try {
@@ -70,10 +91,8 @@
         );
     }
 
-    const snippets = [
-        {
-            title: "Разбор слова",
-            code: `import { MorphAnalyzer } from 'belmorph';
+    const SNIPPET_CODES = [
+        `import { MorphAnalyzer } from 'belmorph';
 
 const morph = await MorphAnalyzer.init('/dict/');
 const [result] = morph.parse('горад');
@@ -81,27 +100,18 @@ const [result] = morph.parse('горад');
 console.log(result.lemma);         // 'горад'
 console.log(result.tags.pos);      // 'N'  (назоўнік)
 console.log(result.tags.animacy);  // 'I'  (неадушаўлёны)`,
-        },
-        {
-            title: "Скланенне",
-            code: `const city = morph.parse('горад')[0];
+        `const city = morph.parse('горад')[0];
 
 city.inflect({ case: 'instrumental', number: 'plural' })?.word;
 // → 'гарадамі'
 
 city.inflect({ case: 'G' })?.word;
 // → 'горада'`,
-        },
-        {
-            title: "Поўная лексема",
-            code: `const forms = morph.parse('чытаць')[0].lexeme;
+        `const forms = morph.parse('чытаць')[0].lexeme;
 
 forms.map(f => f.word);
 // → ['чытаць', 'чытаю', 'чытаеш', 'чытае', ...]`,
-        },
-        {
-            title: "Рэальныя прыклады",
-            code: `// e-commerce: падлік тавараў
+        `// e-commerce: падлік тавараў
 function pluralize(n: number, word: string): string {
     const [p] = morph.parse(word);
     const t = n % 10, h = n % 100;
@@ -133,19 +143,20 @@ function normalize(word: string): string {
 }
 'кнігі тавары гарады'.split(' ').map(normalize);
 // → ['кніга', 'тавар', 'горад']`,
-        },
     ];
 
-    let snippetCopied = $state(snippets.map(() => false));
+    const snippets = $derived(
+        ui.snippetTitles.map((title, i) => ({ title, code: SNIPPET_CODES[i] }))
+    );
+
+    let snippetCopied = $state(SNIPPET_CODES.map(() => false));
     let npmCopied = $state(false);
 
     async function copySnippet(i: number) {
         await navigator.clipboard.writeText(snippets[i].code);
-        snippetCopied = snippetCopied.map((v, idx) => (idx === i ? true : v));
+        snippetCopied[i] = true;
         setTimeout(() => {
-            snippetCopied = snippetCopied.map((v, idx) =>
-                idx === i ? false : v,
-            );
+            snippetCopied[i] = false;
         }, 1500);
     }
 
@@ -158,21 +169,38 @@ function normalize(word: string): string {
     }
 </script>
 
+<div class="aurora-bg">
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+    <div class="aurora-blob"></div>
+</div>
+
 <header class="hero">
-    <div class="hero-top">
-        <span class="hero-logotype">belmorph</span>
-        <span class="hero-version">v{version}</span>
+    <div class="header-controls">
+        <button
+            class="ctrl-btn"
+            class:active={appState.lang === 'be'}
+            onclick={() => appState.lang = 'be'}
+        >BE</button>
+        <button
+            class="ctrl-btn"
+            class:active={appState.lang === 'en'}
+            onclick={() => appState.lang = 'en'}
+        >EN</button>
+        <button class="ctrl-btn" onclick={cycleTheme} title="Toggle theme">{themeIcon}</button>
     </div>
-    <p class="hero-tagline">
-        Беларускі марфалагічны аналізатар для TypeScript.
-    </p>
+    <h1 class="hero-title">
+        <span class="title-bel">bel</span><span class="title-morph">morph</span>
+    </h1>
+    <div class="hero-version">v{version}</div>
+    <p class="hero-tagline">{ui.tagline}</p>
     <div class="hero-features">
         <span class="feature-pill">⚡ DAWG-пошук</span>
         <span class="feature-pill">🌐 Браўзер + Node.js</span>
         <span class="feature-pill">📦 Zero dependencies</span>
     </div>
     <div class="hero-cta">
-        <button class="cta-npm" onclick={copyNpm} title="Скапіяваць каманду">
+        <button class="cta-npm" onclick={copyNpm} title="Copy command">
             <code>npm install belmorph</code>
             <span class="cta-icon">{npmCopied ? "✓" : "⧉"}</span>
         </button>
@@ -186,11 +214,11 @@ function normalize(word: string): string {
 </header>
 
 <section id="playground" class="page-section">
-    <h2 class="section-heading">Паспрабуй</h2>
+    <h2 class="section-heading">{ui.playground}</h2>
     {#if loading}
         <div class="loading">
             <div class="spinner"></div>
-            <span>Загрузка слоўніка…</span>
+            <span>{ui.loading}</span>
         </div>
     {:else if error}
         <div class="error-message">{error}</div>
@@ -198,7 +226,7 @@ function normalize(word: string): string {
         <SearchInput {onSearch} bind:value={searchWord} />
 
         <div class="examples">
-            <span class="examples-label">Прыклады:</span>
+            <span class="examples-label">{ui.examples}</span>
             {#each EXAMPLES as word}
                 <button
                     class="example-chip"
@@ -214,17 +242,17 @@ function normalize(word: string): string {
 </section>
 
 <section id="examples" class="page-section">
-    <h2 class="section-heading">Прыклады кода</h2>
+    <h2 class="section-heading">{ui.codeExamples}</h2>
     <div class="code-blocks">
         {#each snippets as snippet, i}
             <div class="code-block">
                 <div class="code-block-header">
                     <span class="code-block-title">{snippet.title}</span>
                     <button class="copy-btn" onclick={() => copySnippet(i)}>
-                        {snippetCopied[i] ? "✓" : "Скапіяваць"}
+                        {snippetCopied[i] ? "✓" : ui.copy}
                     </button>
                 </div>
-                <pre><code>{@html highlight(snippet.code)}</code></pre>
+                <pre tabindex="0"><code>{@html highlight(snippet.code)}</code></pre>
             </div>
         {/each}
     </div>
@@ -233,16 +261,11 @@ function normalize(word: string): string {
 <section id="about" class="page-section">
     <div class="about-grid">
         <div class="about-col">
-            <h3 class="about-heading">Чаму belmorph?</h3>
-            <p class="about-text">
-                Беларуская мова — малавыкарыстальны рэсурс у экасістэме JS/TS.
-                belmorph запаўняе гэты прабел, даючы распрацоўнікам поўны
-                марфалагічны аналіз для чат-ботаў, пошуку, аўтакарэкцыі і
-                NLP-канвеераў.
-            </p>
+            <h3 class="about-heading">{ui.whyTitle}</h3>
+            <p class="about-text">{ui.whyText}</p>
         </div>
         <div class="about-col">
-            <h3 class="about-heading">Атрыбуцыя</h3>
+            <h3 class="about-heading">{ui.attributionTitle}</h3>
             <ul class="about-list">
                 <li>
                     Слоўнікавая база:
@@ -274,10 +297,10 @@ function normalize(word: string): string {
             rel="noopener">Issues</a
         >
         <span class="footer-sep">·</span>
-        <span>ліцэнзія MIT AND CC-BY-SA-4.0</span>
+        <span>{ui.license}</span>
     </div>
     <p class="footer-credit">
-        Зроблена з ♥ для беларускай мовы — <a
+        {ui.credit} — <a
             href="https://github.com/alesdrobysh"
             target="_blank"
             rel="noopener">Ales Drobysh</a

@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { appState } from '../lib/lang.svelte.js';
+  import { UI } from '../lib/i18n.js';
+
+  const ui = $derived(UI[appState.lang]);
 
   let { onSearch, value = $bindable('') }: { onSearch: (word: string) => void; value?: string } = $props();
 
@@ -8,6 +12,10 @@
 
   onMount(() => {
     inputEl?.focus();
+  });
+
+  onDestroy(() => {
+    if (timer) clearTimeout(timer);
   });
 
   function handleInput() {
@@ -27,7 +35,7 @@
     bind:this={inputEl}
     class="search-input"
     type="text"
-    placeholder="Увядзіце слова…"
+    placeholder={ui.placeholder}
     bind:value
     oninput={handleInput}
   />

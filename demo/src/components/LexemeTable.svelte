@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { ParseResult } from 'belmorph';
-  import { CASE, GENDER, PERSON, NUMBER, COMPARISON } from '../lib/i18n.js';
+  import { appState } from '../lib/lang.svelte.js';
+  import { LABELS, UI } from '../lib/i18n.js';
+
+  const i18n = $derived(LABELS[appState.lang]);
+  const ui = $derived(UI[appState.lang]);
 
   let { result }: { result: ParseResult } = $props();
 
@@ -18,29 +22,30 @@
   const CASES = ['N', 'G', 'D', 'A', 'I', 'L', 'V'] as const;
   const NUMBERS = ['S', 'P'] as const;
 
-  function nounTable(forms: ParseResult[]) {
-    return CASES.map(c => ({
-      caseLabel: CASE[c] ?? c,
-      singular: forms.find(f => f.tags.case === c && f.tags.number === 'S') ?? null,
-      plural: forms.find(f => f.tags.case === c && f.tags.number === 'P') ?? null,
-    }));
-  }
-
   // Adjective: organize by case × gender (sg) + plural row
   const GENDERS = ['M', 'F', 'N'] as const;
 
-  function adjTable(forms: ParseResult[]) {
-    return CASES.map(c => ({
-      caseLabel: CASE[c] ?? c,
-      M: forms.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'M') ?? null,
-      F: forms.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'F') ?? null,
-      N: forms.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'N') ?? null,
-      P: forms.find(f => f.tags.case === c && f.tags.number === 'P') ?? null,
-    }));
-  }
+  const nounRows = $derived(
+    CASES.map(c => ({
+      caseLabel: i18n.CASE[c] ?? c,
+      singular: lexeme.find(f => f.tags.case === c && f.tags.number === 'S') ?? null,
+      plural: lexeme.find(f => f.tags.case === c && f.tags.number === 'P') ?? null,
+    }))
+  );
+
+  const adjRows = $derived(
+    CASES.map(c => ({
+      caseLabel: i18n.CASE[c] ?? c,
+      M: lexeme.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'M') ?? null,
+      F: lexeme.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'F') ?? null,
+      N: lexeme.find(f => f.tags.case === c && f.tags.number === 'S' && f.tags.gender === 'N') ?? null,
+      P: lexeme.find(f => f.tags.case === c && f.tags.number === 'P') ?? null,
+    }))
+  );
 
   // Verb: gather infinitive, present/future, past, imperative sections
-  function verbSections(forms: ParseResult[]) {
+  const verbSecs = $derived.by(() => {
+    const forms = lexeme;
     const infinitive = forms.find(f => !f.tags.tense && !f.tags.mood && !f.tags.person && !f.tags.gender);
     const present = forms.filter(f => f.tags.tense === 'R' && f.tags.mood === 'I');
     const future = forms.filter(f => f.tags.tense === 'F' && f.tags.mood === 'I');
@@ -48,42 +53,31 @@
     const imperative = forms.filter(f => f.tags.mood === 'M');
     const gerunds = forms.filter(f => {
       const t = f.tags;
-      return !t.case && !t.number && !t.gender && !t.person && !t.mood;
-    }).filter(f => f !== infinitive);
-
+      return !t.tense && !t.mood && !t.case && !t.number && !t.gender && !t.person && f !== infinitive;
+    });
     return { infinitive, present, future, past, imperative, gerunds };
-  }
-
-  // Simple flat form list for other POS
-  function flatForms(forms: ParseResult[]) {
-    return forms;
-  }
-
-  function formText(f: ParseResult | null): string {
-    return f ? f.word : '—';
-  }
+  });
 </script>
 
 <div class="collapsible">
   <button class="collapsible-toggle" onclick={() => (open = !open)}>
-    <i class="toggle-arrow" class:open>{open ? '▶' : '▶'}</i>
-    {open ? 'Схаваць' : 'Паказаць'} усе формы
+    {open ? '∧' : '∨'}
+    {open ? ui.hideForms : ui.showForms} ({lexeme.length})
   </button>
 
   {#if open}
     <div class="collapsible-content">
       {#if pos === 'N' || pos === 'S' || pos === 'M'}
-        {@const rows = nounTable(lexeme)}
         <table class="lexeme-table">
           <thead>
             <tr>
-              <th>Склон</th>
-              <th>Адз.</th>
-              <th>Мн.</th>
+              <th>{ui.case}</th>
+              <th>{ui.singular_abbr}</th>
+              <th>{ui.plural_abbr}</th>
             </tr>
           </thead>
           <tbody>
-            {#each rows as row}
+            {#each nounRows as row}
               <tr class:current-form={
                 (row.singular && isCurrent(row.singular)) ||
                 (row.plural && isCurrent(row.plural))
@@ -109,19 +103,18 @@
         </table>
 
       {:else if pos === 'A' || pos === 'P'}
-        {@const rows = adjTable(lexeme)}
         <table class="lexeme-table">
           <thead>
             <tr>
-              <th>Склон</th>
-              <th>Мужч.</th>
-              <th>Жан.</th>
-              <th>Ніяк.</th>
-              <th>Мн.</th>
+              <th>{ui.case}</th>
+              <th>{ui.masc_abbr}</th>
+              <th>{ui.fem_abbr}</th>
+              <th>{ui.neut_abbr}</th>
+              <th>{ui.plural_abbr}</th>
             </tr>
           </thead>
           <tbody>
-            {#each rows as row}
+            {#each adjRows as row}
               <tr>
                 <td class="case-label">{row.caseLabel}</td>
                 <td class:current-form={row.M && isCurrent(row.M)}>
@@ -142,28 +135,27 @@
         </table>
 
       {:else if pos === 'V'}
-        {@const secs = verbSections(lexeme)}
         <table class="lexeme-table">
           <tbody>
-            {#if secs.infinitive}
+            {#if verbSecs.infinitive}
               <tr class="section-header">
-                <td colspan="3">Інфінітыў</td>
+                <td colspan="3">{ui.infinitive}</td>
               </tr>
-              <tr class:current-form={isCurrent(secs.infinitive)}>
+              <tr class:current-form={isCurrent(verbSecs.infinitive)}>
                 <td class="case-label">—</td>
-                <td colspan="2">{secs.infinitive.word}</td>
+                <td colspan="2">{verbSecs.infinitive.word}</td>
               </tr>
             {/if}
 
-            {#if secs.present.length > 0}
+            {#if verbSecs.present.length > 0}
               <tr class="section-header">
-                <td colspan="3">Цяперашні час</td>
+                <td colspan="3">{ui.presentTense}</td>
               </tr>
               {#each ['1', '2', '3'] as person}
                 <tr>
-                  <td class="case-label">{PERSON[person] ?? person} асоба</td>
+                  <td class="case-label">{i18n.PERSON[person] ?? person}{ui.person_suffix ? ` ${ui.person_suffix}` : ''}</td>
                   {#each NUMBERS as num}
-                    {@const f = secs.present.find(x => x.tags.person === person && x.tags.number === num)}
+                    {@const f = verbSecs.present.find(x => x.tags.person === person && x.tags.number === num)}
                     <td class:current-form={f && isCurrent(f)}>
                       {f ? f.word : '—'}
                     </td>
@@ -172,15 +164,15 @@
               {/each}
             {/if}
 
-            {#if secs.future.length > 0}
+            {#if verbSecs.future.length > 0}
               <tr class="section-header">
-                <td colspan="3">Будучы час</td>
+                <td colspan="3">{ui.futureTense}</td>
               </tr>
               {#each ['1', '2', '3'] as person}
                 <tr>
-                  <td class="case-label">{PERSON[person] ?? person} асоба</td>
+                  <td class="case-label">{i18n.PERSON[person] ?? person}{ui.person_suffix ? ` ${ui.person_suffix}` : ''}</td>
                   {#each NUMBERS as num}
-                    {@const f = secs.future.find(x => x.tags.person === person && x.tags.number === num)}
+                    {@const f = verbSecs.future.find(x => x.tags.person === person && x.tags.number === num)}
                     <td class:current-form={f && isCurrent(f)}>
                       {f ? f.word : '—'}
                     </td>
@@ -189,41 +181,41 @@
               {/each}
             {/if}
 
-            {#if secs.past.length > 0}
+            {#if verbSecs.past.length > 0}
               <tr class="section-header">
-                <td colspan="3">Прошлы час</td>
+                <td colspan="3">{ui.pastTense}</td>
               </tr>
               {#each GENDERS as gender}
-                {@const f = secs.past.find(x => x.tags.gender === gender && x.tags.number === 'S')}
+                {@const f = verbSecs.past.find(x => x.tags.gender === gender && x.tags.number === 'S')}
                 <tr>
-                  <td class="case-label">{GENDER[gender] ?? gender}</td>
+                  <td class="case-label">{i18n.GENDER[gender] ?? gender}</td>
                   <td class:current-form={f && isCurrent(f)} colspan="2">{f ? f.word : '—'}</td>
                 </tr>
               {/each}
-              {@const fpl = secs.past.find(x => x.tags.number === 'P')}
+              {@const fpl = verbSecs.past.find(x => x.tags.number === 'P')}
               <tr>
-                <td class="case-label">мн.</td>
+                <td class="case-label">{ui.plural_abbr2}</td>
                 <td class:current-form={fpl && isCurrent(fpl)} colspan="2">{fpl ? fpl.word : '—'}</td>
               </tr>
             {/if}
 
-            {#if secs.imperative.length > 0}
+            {#if verbSecs.imperative.length > 0}
               <tr class="section-header">
-                <td colspan="3">Загадны лад</td>
+                <td colspan="3">{ui.imperative}</td>
               </tr>
-              {#each secs.imperative as f}
+              {#each verbSecs.imperative as f}
                 <tr class:current-form={isCurrent(f)}>
-                  <td class="case-label">{PERSON[f.tags.person ?? ''] ?? ''} {NUMBER[f.tags.number ?? ''] ?? ''}</td>
+                  <td class="case-label">{i18n.PERSON[f.tags.person ?? ''] ?? ''} {i18n.NUMBER[f.tags.number ?? ''] ?? ''}</td>
                   <td colspan="2">{f.word}</td>
                 </tr>
               {/each}
             {/if}
 
-            {#if secs.gerunds.length > 0}
+            {#if verbSecs.gerunds.length > 0}
               <tr class="section-header">
-                <td colspan="3">Дзеепрыслоўі</td>
+                <td colspan="3">{ui.gerunds}</td>
               </tr>
-              {#each secs.gerunds as f}
+              {#each verbSecs.gerunds as f}
                 <tr class:current-form={isCurrent(f)}>
                   <td class="case-label">—</td>
                   <td colspan="2">{f.word}</td>
@@ -237,12 +229,12 @@
         {@const compIdx = lexeme.findIndex(f => f.tags.comparison === 'C')}
         <table class="lexeme-table">
           <tbody>
-            {#each lexeme as f, i}
+            {#each lexeme as f, idx}
               {@const label = f.tags.comparison
-                ? (COMPARISON[f.tags.comparison] ?? f.tags.comparison)
-                : compIdx === -1 ? COMPARISON['P']
-                : i < compIdx ? COMPARISON['P']
-                : COMPARISON['S']}
+                ? (i18n.COMPARISON[f.tags.comparison] ?? f.tags.comparison)
+                : compIdx === -1 ? i18n.COMPARISON['P']
+                : idx < compIdx ? i18n.COMPARISON['P']
+                : i18n.COMPARISON['S']}
               <tr class:current-form={isCurrent(f)}>
                 <td class="case-label">{label}</td>
                 <td>{f.word}</td>
