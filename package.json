@@ -41,9 +41,11 @@
     "build": "tsc -p tsconfig.build.json",
     "build:dict": "tsx scripts/build-dict.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "release": "tsx scripts/release.ts"
   },
   "devDependencies": {
+    "@google/genai": "^1.43.0",
     "fast-xml-parser": "^5.4.1",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
