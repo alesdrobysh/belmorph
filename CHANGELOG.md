@@ -16,18 +16,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Improve default dictionary directory resolution
 
-
-## [Unreleased]
-
-### Added
-- `loadDictAsync` function for web-compatible dictionary loading via the Fetch API
-- `belmorph/node` package export (`node-loader.ts`) for Node.js-specific dictionary loading
-- Interactive Svelte demo application deployed to GitHub Pages
-- Graceful handling of browser-decompressed gzip responses
-
-### Changed
-- `MorphAnalyzer` now accepts pre-loaded `DictData` instead of loading the dictionary internally
-
 ## [1.0.0] - 2026-03-02
 
 ### Added
