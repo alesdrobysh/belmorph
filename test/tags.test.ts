@@ -48,6 +48,19 @@ describe('decodeFormTag', () => {
     expect(decodeFormTag('C')).toEqual({ comparison: 'C' });
   });
 
+  it('decodes positive form tag for adverbs/adjectives', () => {
+    expect(decodeFormTag('P')).toEqual({ comparison: 'P' });
+  });
+
+  it('decodes superlative form tag (найхутчэй)', () => {
+    expect(decodeFormTag('S')).toEqual({ comparison: 'S' });
+  });
+
+  it('decodes short participle form tag R (аб\'едзена)', () => {
+    // 'R' is a short participle form, carries no additional grammemes
+    expect(decodeFormTag('R')).toEqual({});
+  });
+
   it('decodes gerund without mood', () => {
     expect(decodeFormTag('RG')).toEqual({});
   });
@@ -122,10 +135,13 @@ describe('decodeParadigmTag', () => {
     expect(decodeParadigmTag('ARS')).toEqual({ pos: 'A', comparison: 'S' });
   });
 
-  it('decodes adverb — comparison at position 1 if present', () => {
-    expect(decodeParadigmTag('RA')).toEqual({ pos: 'R' }); // 'A' is not a comparison code
-    expect(decodeParadigmTag('RC')).toEqual({ pos: 'R', comparison: 'C' });
-    expect(decodeParadigmTag('RS')).toEqual({ pos: 'R', comparison: 'S' });
+  it('decodes adverb — comparison comes from form tags, not paradigm tag', () => {
+    // Adverb paradigm tag encodes formation method at position 1, not comparison.
+    // RA = from adjective, RS = from pronoun, RX = unknown formation.
+    // Comparison (P/C/S) is in form tags.
+    expect(decodeParadigmTag('RA')).toEqual({ pos: 'R' });
+    expect(decodeParadigmTag('RS')).toEqual({ pos: 'R' }); // from pronoun, not superlative!
+    expect(decodeParadigmTag('RX')).toEqual({ pos: 'R' }); // unknown formation
   });
 
   it('handles short special-case verb tags gracefully', () => {

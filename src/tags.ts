@@ -186,12 +186,6 @@ export function decodeFormTag(tag: string): Grammeme {
     return g;
   }
 
-  if (tag === "C") {
-    // comparative degree form (e.g. хутчэй)
-    g.comparison = "C";
-    return g;
-  }
-
   // Verb present/future tense: R1S, R2P, F3S, etc.
   if (
     (tag[0] === "R" || tag[0] === "F") &&
@@ -249,8 +243,22 @@ export function decodeFormTag(tag: string): Grammeme {
     return g;
   }
 
-  // Special short tags (indeclinable/base forms with no further grammeme info)
-  if (tag === "P" || tag === "R" || tag === "S") {
+  // Comparison degree for adverbs/adjectives (form tags C, P, S)
+  if (tag === "C") {
+    g.comparison = "C";
+    return g;
+  }
+  if (tag === "P") {
+    g.comparison = "P";
+    return g;
+  }
+  if (tag === "S") {
+    g.comparison = "S";
+    return g;
+  }
+
+  // Short form for participles (e.g. "аб'едзена")
+  if (tag === "R") {
     return g;
   }
 
@@ -348,12 +356,12 @@ export function decodeParadigmTag(tag: string): Grammeme {
     if (comp === "P" || comp === "C" || comp === "S") g.comparison = comp;
   }
 
-  // Adverb: R[comparison]
-  // Comparison degree is encoded at position 1 (0-indexed)
-  if (pos === "R" && tag.length > 1) {
-    const comp = tag[1];
-    if (comp === "P" || comp === "C" || comp === "S") g.comparison = comp;
-  }
+  // Adverb: R[+?][formation]
+  // Position 1 is the formation method (not comparison):
+  //   N=from noun, A=from adjective, M=from numeral, S=from pronoun,
+  //   G=from gerund, V=from verb, E=from particle, I=from preposition, X=unknown
+  //   prefixed with '+' for new words (e.g. "R+")
+  // Comparison (P/C/S) for adverbs is encoded in form tags, not paradigm tags.
 
   return g;
 }

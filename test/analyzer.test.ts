@@ -87,6 +87,20 @@ describe('ParseResult.inflect', () => {
     const inflected = city.inflect({ tense: 'R', person: '1' });
     expect(inflected).toBeNull();
   });
+
+  it('inflects adverb хутка to comparative хутчэй', () => {
+    const adv = morph.parse('хутка')[0];
+    const inflected = adv.inflect({ comparison: 'C' });
+    expect(inflected).not.toBeNull();
+    expect(inflected!.word).toBe('хутчэй');
+  });
+
+  it('inflects adverb хутка to superlative найхутчэй', () => {
+    const adv = morph.parse('хутка')[0];
+    const inflected = adv.inflect({ comparison: 'S' });
+    expect(inflected).not.toBeNull();
+    expect(inflected!.word).toBe('найхутчэй');
+  });
 });
 
 describe('ParseResult.lexeme', () => {
