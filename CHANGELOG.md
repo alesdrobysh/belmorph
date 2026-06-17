@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.2] - 2026-06-17
+
+### Changed
+- Updated GrammarDB subproject dependency reference.
+- Refactored tag decoding logic to improve maintainability.
+- Enhanced test coverage for adverb comparisons.
+
+### Removed
+- Removed unreleased section and stale entries from changelog files.
+
+
 ## [1.0.1] - 2026-03-03
 
 ### Added
