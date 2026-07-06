@@ -3,6 +3,7 @@
     import { version } from "../../package.json";
     import { MorphAnalyzer } from "belmorph";
     import type { ParseResult } from "belmorph";
+    import TokenizerDemo from "./components/TokenizerDemo.svelte";
     import SearchInput from "./components/SearchInput.svelte";
     import ResultsView from "./components/ResultsView.svelte";
     import { appState } from "./lib/lang.svelte.js";
@@ -239,6 +240,11 @@ function normalize(word: string): string {
 
         <ResultsView {results} {searched} />
     {/if}
+</section>
+
+<section id="tokenizer" class="page-section">
+  <h2 class="section-heading">{ui.tokenizer}</h2>
+  <TokenizerDemo morph={analyzer} />
 </section>
 
 <section id="examples" class="page-section">

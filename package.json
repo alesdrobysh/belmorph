@@ -31,6 +31,10 @@
     "./node": {
       "import": "./dist/node-loader.js",
       "types": "./dist/node-loader.d.ts"
+    },
+    "./tokens": {
+      "import": "./dist/tokens/index.js",
+      "types": "./dist/tokens/index.d.ts"
     }
   },
   "files": [

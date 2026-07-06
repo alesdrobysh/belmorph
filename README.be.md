@@ -107,6 +107,75 @@ npm test           # Аднаразовы запуск тэстаў
 npm run test:watch # Запуск тэстаў у рэжыме назірання
 ```
 
+## Такенізатар
+
+Belmorph уключае патоковы такенізатар для беларускага тэксту. Ён разбівае тэкст на токены
+(словы, лікі, пунктуацыю, прабелы, хэштэгі, згадкі, email і спасылкі).
+
+```typescript
+import { Tokenizer, only, TokenType } from 'belmorph/tokens';
+
+// Аднаразовая такенізацыя
+const tokens = Tokenizer.tokenize('Прывітанне, свет! #мова');
+console.log(tokens.map(t => t.toString()));
+
+// Патокавая (для вялікіх дакументаў)
+const tz = new Tokenizer();
+tz.append('Прывіта');
+tz.append('нне, свет!');
+const tokens = tz.done();
+
+// Фільтрацыя па тыпе
+const words = only(tokens, TokenType.WORD);
+console.log(words.map(w => w.toString())); // ['Прывітанне', 'свет']
+```
+
+### Тыпы токенаў
+
+| Тып | Апісанне |
+|------|----------|
+| `WORD` | Кірылічнае ці лацінскае слова (падтып: CYRIL, LATIN, MIXED) |
+| `NUMBER` | Цэлы ці дробавы лік |
+| `PUNCT` | Знак прыпынку |
+| `SPACE` | Прабел |
+| `NEWLINE` | Перанос радка |
+| `EMAIL` | Email адрас |
+| `LINK` | URL (з пратаколам або www) |
+| `HASHTAG` | #хэштэг |
+| `MENTION` | @згадка |
+
+### Налады такенізатара
+
+```typescript
+const tz = new Tokenizer({
+  hashtags: true,   // распазнаваць #хэштэгі
+  mentions: true,   // распазнаваць @згадкі
+  emails: true,     // распазнаваць email
+  links: true,      // распазнаваць URL
+});
+```
+
+## Аналіз тэксту (TextAnalyzer)
+
+`TextAnalyzer` аб'ядноўвае такенізатар і марфалагічны аналіз для поўнага разбору тэксту.
+
+```typescript
+import { TextAnalyzer, MorphAnalyzer } from 'belmorph';
+
+const morph = await MorphAnalyzer.init('/dict/');
+const analyzer = new TextAnalyzer(morph);
+
+const result = analyzer.analyze('Горад прыгожы!');
+// [{ token: Token("Горад"), parse: { lemma: "горад", tags: { pos: "N", ... } } },
+//  { token: Token(" "),      parse: null },
+//  { token: Token("прыгожы"), parse: { lemma: "прыгожы", tags: { pos: "A", ... } } },
+//  { token: Token("!"),      parse: null }]
+
+// Толькі словы з разборам
+const words = analyzer.words('кніга і тавар');
+words.map(w => w.parse!.lemma); // ['кніга', 'тавар']
+```
+
 ## Ліцэнзія
 
 Гэты праект мае падвойную ліцэнзію:

@@ -107,6 +107,75 @@ npm test           # Run tests once
 npm run test:watch # Run tests in watch mode
 ```
 
+## Tokenizer
+
+Belmorph includes a streaming tokenizer for Belarusian text. It splits text into tokens
+(words, numbers, punctuation, spaces, hashtags, mentions, emails, and links).
+
+```typescript
+import { Tokenizer, only, TokenType } from 'belmorph/tokens';
+
+// One-shot tokenization
+const tokens = Tokenizer.tokenize('Прывітанне, свет! #мова');
+console.log(tokens.map(t => t.toString()));
+
+// Streaming (for large documents)
+const tz = new Tokenizer();
+tz.append('Прывіта');
+tz.append('нне, свет!');
+const tokens = tz.done();
+
+// Filter by type
+const words = only(tokens, TokenType.WORD);
+console.log(words.map(w => w.toString())); // ['Прывітанне', 'свет']
+```
+
+### Token types
+
+| Type | Description |
+|------|-------------|
+| `WORD` | Cyrillic or Latin word (subtype: CYRIL, LATIN, MIXED) |
+| `NUMBER` | Integer or decimal number |
+| `PUNCT` | Punctuation mark |
+| `SPACE` | Whitespace (spaces, tabs) |
+| `NEWLINE` | Line break |
+| `EMAIL` | Email address |
+| `LINK` | URL (with protocol or starting with www) |
+| `HASHTAG` | #hashtag |
+| `MENTION` | @mention |
+
+### Tokenizer options
+
+```typescript
+const tz = new Tokenizer({
+  hashtags: true,   // recognize #hashtags
+  mentions: true,   // recognize @mentions
+  emails: true,     // recognize emails
+  links: true,      // recognize URLs
+});
+```
+
+## Text Analysis (TextAnalyzer)
+
+`TextAnalyzer` combines the tokenizer and morphological analyzer for full text parsing.
+
+```typescript
+import { TextAnalyzer, MorphAnalyzer } from 'belmorph';
+
+const morph = await MorphAnalyzer.init('/dict/');
+const analyzer = new TextAnalyzer(morph);
+
+const result = analyzer.analyze('Горад прыгожы!');
+// [{ token: Token("Горад"), parse: { lemma: "горад", tags: { pos: "N", ... } } },
+//  { token: Token(" "),      parse: null },
+//  { token: Token("прыгожы"), parse: { lemma: "прыгожы", tags: { pos: "A", ... } } },
+//  { token: Token("!"),      parse: null }]
+
+// Words only
+const words = analyzer.words('кніга і тавар');
+words.map(w => w.parse!.lemma); // ['кніга', 'тавар']
+```
+
 ## License
 
 This project is dual-licensed:

@@ -24,6 +24,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'belmorph': resolve(__dirname, '../src/index.ts'),
+      'belmorph/tokens': resolve(__dirname, '../src/tokens/index.ts'),
     },
   },
   server: {
