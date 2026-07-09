@@ -85,7 +85,18 @@ When a word is not found in the dictionary, the analyzer falls back to suffix-ba
 - `tags` — grammatical properties (`Grammeme` interface, see `src/tags.ts`)
 - `predicted` — whether the analysis was predicted
 - `inflect(target)` — returns the form matching the given grammemes, or `null`
+- `pluralize(count, targetCase = 'N')` — returns the form agreeing with `count`, following Belarusian numeral agreement rules. `targetCase` is the case the whole numeral phrase is governed by — nominative by default, or an oblique case (e.g. dative when governed by a verb or preposition)
 - `lexeme` — all forms of the word
+
+```typescript
+const book = morph.parse('кніга')[0];
+book.pluralize(1)!.word;  // 'кніга' (1 кніга)
+book.pluralize(2)!.word;  // 'кнігі'  (2 кнігі)
+book.pluralize(5)!.word;  // 'кніг'   (5 кніг)
+
+// Oblique government, e.g. "давяраю пяці кнігам" (dative, governed by the verb)
+book.pluralize(5, 'D')!.word; // 'кнігам'
+```
 
 Grammeme values follow [GrammarDB](https://github.com/Belarus/GrammarDB) codes. Both short codes (`'I'`) and full English names (`'instrumental'`) are accepted by `inflect()`.
 
