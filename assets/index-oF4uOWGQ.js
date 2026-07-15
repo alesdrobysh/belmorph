@@ -20,19 +20,11 @@ city.inflect({ case: 'G' })?.word;
 
 forms.map(f => f.word);
 // → ['чытаць', 'чытаю', 'чытаеш', 'чытае', ...]`,`// e-commerce: падлік тавараў
-function pluralize(n: number, word: string): string {
-    const [p] = morph.parse(word);
-    const t = n % 10, h = n % 100;
-    if (t === 1 && h !== 11)
-        return p.inflect({ case: 'nominative' })?.word ?? word;
-    if (t >= 2 && t <= 4 && (h < 12 || h > 14))
-        return p.inflect({ case: 'nominative', number: 'plural' })?.word ?? word;
-    return p.inflect({ case: 'genitive', number: 'plural' })?.word ?? word;
-}
-[1, 2, 5, 21, 11].map(n => \`\${n} \${pluralize(n, 'тавар')}\`);
-// → ['1 тавар', '2 тавары', '5 тавараў', '21 тавар', '11 тавараў']
+const [item] = morph.parse('тавар');
+[1, 2, 5, 21, 11].map(n => \`\${n} \${item.pluralize(n)?.word}\`);
+// → ['1 тавар', '2 тавара', '5 тавараў', '21 тавар', '11 тавараў']
 
-\`У кошыку 5 \${pluralize(5, 'тавар')}\`;          // → 'У кошыку 5 тавараў'
+\`У кошыку 5 \${item.pluralize(5)?.word}\`;        // → 'У кошыку 5 тавараў'
 
 // e-commerce: дастаўка ў горад
 const city = morph.parse('бярозаўка')[0];
