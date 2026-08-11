@@ -1,4 +1,5 @@
 import type { RawWord } from './extract.js';
+import type { Case } from '../src/tags.js';
 
 export interface ParadigmEntry {
   tagId: number;   // index into tagTable
@@ -9,6 +10,7 @@ export interface Paradigm {
   entries: ParadigmEntry[];
   paradigmTag: string;
   lemmaSuffix: string;
+  government?: Case[];
 }
 
 export interface AnalyzedWord {
@@ -62,16 +64,21 @@ export function analyzeWords(rawWords: RawWord[]): AnalysisResult {
     return id;
   }
 
-  // Deduplicate paradigms by their full key (paradigmTag + lemmaSuffix + entries)
+  // Deduplicate paradigms by their full key, including lexeme-level government.
   const paradigmMap = new Map<string, number>();
   const paradigms: Paradigm[] = [];
 
-  function getParadigmId(entries: ParadigmEntry[], paradigmTag: string, lemmaSuffix: string): number {
-    const key = paradigmTag + '|' + lemmaSuffix + '||' + entries.map(e => `${e.tagId}:${e.suffix}`).join('|');
+  function getParadigmId(
+    entries: ParadigmEntry[],
+    paradigmTag: string,
+    lemmaSuffix: string,
+    government?: Case[],
+  ): number {
+    const key = paradigmTag + '|' + (government?.join('') ?? '') + '|' + lemmaSuffix + '||' + entries.map(e => `${e.tagId}:${e.suffix}`).join('|');
     let id = paradigmMap.get(key);
     if (id === undefined) {
       id = paradigms.length;
-      paradigms.push({ entries, paradigmTag, lemmaSuffix });
+      paradigms.push({ entries, paradigmTag, lemmaSuffix, government });
       paradigmMap.set(key, id);
     }
     return id;
@@ -93,7 +100,7 @@ export function analyzeWords(rawWords: RawWord[]): AnalysisResult {
     // lemmaSuffix: the part of the lemma after the stem
     const lemmaSuffix = raw.lemma.slice(stem.length);
 
-    const paradigmId = getParadigmId(entries, raw.paradigmTag, lemmaSuffix);
+    const paradigmId = getParadigmId(entries, raw.paradigmTag, lemmaSuffix, raw.government);
 
     words.push({ stem, paradigmId });
   }

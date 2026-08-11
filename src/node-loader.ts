@@ -35,7 +35,12 @@ export function loadDict(dictDir?: string): DictData {
   );
 
   const paradigmsBuf = gunzipSync(readFileSync(join(dir, 'paradigms.bin.gz')));
-  const paradigms = readParadigms(paradigmsBuf, meta.paradigmTags);
+  const paradigms = readParadigms(
+    paradigmsBuf,
+    meta.paradigmTags,
+    meta.version,
+    meta.governments,
+  );
 
   const predictBuf = gunzipSync(readFileSync(join(dir, 'predict.dawg.gz')));
   const predictDawg = new DawgReader(

@@ -25,6 +25,14 @@ export type Aspect = "P" | "M"; // P=perfective, M=imperfective (GrammarDB codes
 export type Voice = "A" | "P"; // A=active, P=passive
 export type Animacy = "A" | "I"; // A=animate, I=inanimate (адушаўлёнасць)
 export type Comparison = "P" | "C" | "S"; // P=positive, C=comparative, S=superlative
+export type Properness = "C" | "P"; // C=common, P=proper
+export type Abbreviation = "B" | "N" | "K"; // B=shortening, N=not shortened, K=abbreviation
+export type Transitivity = "T" | "I" | "D"; // T=transitive, I=intransitive, D=both
+export type Reflexivity = "R" | "N"; // R=reflexive, N=non-reflexive
+export type Conjugation = "1" | "2" | "3";
+export type PronounType = "P" | "R" | "S" | "D" | "E" | "L" | "N" | "F";
+export type NumeralType = "C" | "O" | "K" | "F";
+export type ConjunctionType = "S" | "K" | "P";
 
 // Full-name grammeme types for better readability
 export type CaseName =
@@ -71,6 +79,15 @@ export interface Grammeme {
   voice?: Voice;
   animacy?: Animacy;
   comparison?: Comparison;
+  properness?: Properness;
+  abbreviation?: Abbreviation;
+  transitivity?: Transitivity;
+  reflexivity?: Reflexivity;
+  conjugation?: Conjugation;
+  pronounType?: PronounType;
+  numeralType?: NumeralType;
+  conjunctionType?: ConjunctionType;
+  government?: Case[];
 }
 
 export interface GrammemeInput {
@@ -85,6 +102,15 @@ export interface GrammemeInput {
   voice?: Voice | VoiceName;
   animacy?: Animacy | AnimacyName;
   comparison?: Comparison | ComparisonName;
+  properness?: Properness;
+  abbreviation?: Abbreviation;
+  transitivity?: Transitivity;
+  reflexivity?: Reflexivity;
+  conjugation?: Conjugation;
+  pronounType?: PronounType;
+  numeralType?: NumeralType;
+  conjunctionType?: ConjunctionType;
+  government?: Case[];
 }
 
 // Valid sets for runtime checking
@@ -216,7 +242,8 @@ export function decodeFormTag(tag: string): Grammeme {
   if (
     tag[0] === "P" &&
     tag.length === 3 &&
-    (GENDERS.has(tag[1]) || tag[1] === "X")
+    ((GENDERS.has(tag[1]) && tag[2] === "S") ||
+      (tag[1] === "X" && tag[2] === "P"))
   ) {
     g.tense = "P";
     g.mood = "I";
@@ -308,27 +335,40 @@ export function posFromParadigmTag(tag: string): Pos | undefined {
 }
 
 /**
- * Decode a paradigm tag into paradigm-level grammemes (pos, aspect, voice).
+ * Decode a paradigm tag into paradigm-level grammemes.
  * Uses GrammarDB positional encoding from BelarusianTags.java.
  *
  * - All POS: position 0 → pos
- * - Verb V[transitivity][aspect][reflexivity][conjugation]: position 2 → aspect (P/M)
+ * - Noun N[properness][animacy][personality][abbreviation][gender][declension]
+ * - Verb V[transitivity][aspect][reflexivity][conjugation]
+ * - Pronoun S[inflection][type][person]
+ * - Numeral M[inflection][type][form]
+ * - Conjunction C[type][subtype]
  * - Participle P[voice][tense][aspect]: position 1 → voice (A/P), position 3 → aspect (P/M)
  */
-export function decodeParadigmTag(tag: string): Grammeme {
+export function decodeParadigmTag(tag: string, government?: Case[]): Grammeme {
   const g: Grammeme = {};
+  if (government?.length) g.government = [...government];
   if (!tag) return g;
 
   const pos = posFromParadigmTag(tag);
   if (pos) g.pos = pos;
 
   // Verb: V[+?][transitivity][aspect][reflexivity][conjugation]
-  // '+' at position 1 is a "new word" marker — aspect shifts one position right
   if (pos === "V") {
-    const aspIdx = tag[1] === "+" ? 3 : 2;
-    if (tag.length > aspIdx) {
-      const asp = tag[aspIdx];
-      if (asp === "P" || asp === "M") g.aspect = asp;
+    const offset = tag[1] === "+" ? 2 : 1;
+    const transitivity = tag[offset];
+    const aspect = tag[offset + 1];
+    const reflexivity = tag[offset + 2];
+    const conjugation = tag[offset + 3];
+
+    if (transitivity === "T" || transitivity === "I" || transitivity === "D") {
+      g.transitivity = transitivity;
+    }
+    if (aspect === "P" || aspect === "M") g.aspect = aspect;
+    if (reflexivity === "R" || reflexivity === "N") g.reflexivity = reflexivity;
+    if (conjugation === "1" || conjugation === "2" || conjugation === "3") {
+      g.conjugation = conjugation;
     }
   }
 
@@ -342,11 +382,44 @@ export function decodeParadigmTag(tag: string): Grammeme {
     }
   }
 
-  // Noun: N[category][class][animacy][gender][...]
-  // Animacy is encoded at position 3 (0-indexed)
-  if (pos === "N" && tag.length > 3) {
-    const anim = tag[3];
-    if (anim === "A" || anim === "I") g.animacy = anim;
+  // Noun: N[properness][animacy][personality][abbreviation][gender][declension]
+  if (pos === "N") {
+    const properness = tag[1];
+    const animacy = tag[2];
+    const abbreviation = tag[4];
+    const genderIdx = tag[5] === "S" || tag[5] === "U" ? 7 : 5;
+    const gender = tag[genderIdx];
+
+    if (properness === "C" || properness === "P") g.properness = properness;
+    if (animacy === "A" || animacy === "I") g.animacy = animacy;
+    if (abbreviation === "B" || abbreviation === "N" || abbreviation === "K") {
+      g.abbreviation = abbreviation;
+    }
+    if (gender === "M" || gender === "F" || gender === "N" || gender === "C") {
+      g.gender = gender;
+    }
+  }
+
+  // Pronoun: S[inflection][type][person]
+  if (pos === "S") {
+    const pronounType = tag[2];
+    const person = tag[3];
+    if ("PRSDELNF".includes(pronounType)) g.pronounType = pronounType as PronounType;
+    if (PERSONS.has(person)) g.person = person as Person;
+  }
+
+  // Numeral: M[inflection][type][form]
+  if (pos === "M") {
+    const numeralType = tag[2];
+    if ("COKF".includes(numeralType)) g.numeralType = numeralType as NumeralType;
+  }
+
+  // Conjunction: C[type][subtype]
+  if (pos === "C") {
+    const conjunctionType = tag[1];
+    if (conjunctionType === "S" || conjunctionType === "K" || conjunctionType === "P") {
+      g.conjunctionType = conjunctionType;
+    }
   }
 
   // Adjective: A[type][class][comparison]
@@ -375,7 +448,17 @@ export function matchesGrammeme(
   target: Partial<Grammeme>,
 ): boolean {
   for (const key of Object.keys(target) as (keyof Grammeme)[]) {
-    if (target[key] !== undefined && grammeme[key] !== target[key]) {
+    const targetValue = target[key];
+    const value = grammeme[key];
+    if (
+      Array.isArray(targetValue) &&
+      (!Array.isArray(value) ||
+        targetValue.length !== value.length ||
+        targetValue.some((item, index) => item !== value[index]))
+    ) {
+      return false;
+    }
+    if (!Array.isArray(targetValue) && targetValue !== undefined && value !== targetValue) {
       return false;
     }
   }
@@ -461,6 +544,16 @@ export function normalizeGrammeme(input: GrammemeInput): Partial<Grammeme> {
         ? COMPARISON_MAP[input.comparison as ComparisonName]
         : (input.comparison as Comparison);
   }
+
+  if (input.properness !== undefined) result.properness = input.properness;
+  if (input.abbreviation !== undefined) result.abbreviation = input.abbreviation;
+  if (input.transitivity !== undefined) result.transitivity = input.transitivity;
+  if (input.reflexivity !== undefined) result.reflexivity = input.reflexivity;
+  if (input.conjugation !== undefined) result.conjugation = input.conjugation;
+  if (input.pronounType !== undefined) result.pronounType = input.pronounType;
+  if (input.numeralType !== undefined) result.numeralType = input.numeralType;
+  if (input.conjunctionType !== undefined) result.conjunctionType = input.conjunctionType;
+  if (input.government !== undefined) result.government = input.government;
 
   return result;
 }

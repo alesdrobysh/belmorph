@@ -67,6 +67,103 @@ describe('MorphAnalyzer.parse', () => {
   });
 });
 
+describe('MorphAnalyzer.parse paradigm-level GrammarDB metadata', () => {
+  it('parses сабака as an animate masculine common noun', () => {
+    const dog = morph.parse('сабака').find(result => result.lemma === 'сабака');
+
+    expect(dog).toBeDefined();
+    expect(dog!.tags).toMatchObject({
+      pos: 'N',
+      properness: 'C',
+      animacy: 'A',
+      abbreviation: 'N',
+      gender: 'M',
+    });
+  });
+
+  it('parses чалавек with noun gender and animacy', () => {
+    const person = morph.parse('чалавек').find(result => result.lemma === 'чалавек');
+
+    expect(person).toBeDefined();
+    expect(person!.tags).toMatchObject({
+      pos: 'N',
+      animacy: 'A',
+      gender: 'M',
+    });
+  });
+
+  it('parses proper nouns and abbreviations', () => {
+    const minsk = morph.parse('мінск').find(result => result.lemma === 'мінск');
+    const bsu = morph.parse('бду').find(result => result.lemma === 'бду');
+
+    expect(minsk).toBeDefined();
+    expect(minsk!.tags).toMatchObject({
+      pos: 'N',
+      properness: 'P',
+      abbreviation: 'N',
+    });
+    expect(bsu).toBeDefined();
+    expect(bsu!.tags).toMatchObject({
+      pos: 'N',
+      properness: 'P',
+      abbreviation: 'K',
+    });
+  });
+
+  it('parses verb transitivity, reflexivity and conjugation', () => {
+    const write = morph.parse('напісаць').find(result => result.lemma === 'напісаць');
+    const wash = morph.parse('мыцца').find(result => result.lemma === 'мыцца');
+
+    expect(write).toBeDefined();
+    expect(write!.tags).toMatchObject({
+      pos: 'V',
+      transitivity: 'D',
+      reflexivity: 'N',
+      conjugation: '1',
+    });
+    expect(wash).toBeDefined();
+    expect(wash!.tags).toMatchObject({
+      pos: 'V',
+      transitivity: 'I',
+      reflexivity: 'R',
+      conjugation: '1',
+    });
+  });
+
+  it('parses pronoun type and person', () => {
+    const you = morph.parse('ты').find(result => result.tags.pos === 'S');
+
+    expect(you).toBeDefined();
+    expect(you!.tags).toMatchObject({
+      pos: 'S',
+      pronounType: 'P',
+      person: '2',
+    });
+  });
+
+  it('parses numeral and conjunction types', () => {
+    const five = morph.parse('пяць').find(result => result.tags.pos === 'M');
+    const conjunction = morph.parse('абы').find(result => result.tags.pos === 'C');
+
+    expect(five).toBeDefined();
+    expect(five!.tags).toMatchObject({ pos: 'M', numeralType: 'C' });
+    expect(five!.tags).not.toHaveProperty('tense');
+    expect(five!.tags).not.toHaveProperty('mood');
+    expect(conjunction).toBeDefined();
+    expect(conjunction!.tags).toMatchObject({ pos: 'C', conjunctionType: 'S' });
+  });
+
+  it('parses the cases governed by a preposition', () => {
+    const without = morph.parse('без').find(result => result.tags.pos === 'I');
+
+    expect(without).toBeDefined();
+    expect(without!.tags).toMatchObject({
+      pos: 'I',
+      government: ['G'],
+    });
+  });
+});
+
 describe('ParseResult.inflect', () => {
   it('inflects горад to instrumental plural', () => {
     const city = morph.parse('горад')[0];

@@ -14,6 +14,10 @@ describe('decodeFormTag', () => {
     expect(decodeFormTag('IP')).toEqual({ case: 'I', number: 'P' });
   });
 
+  it('does not decode plural-only nominal tags as past-tense verbs', () => {
+    expect(decodeFormTag('PNP')).toEqual({ case: 'N', number: 'P' });
+  });
+
   it('decodes verb present tense with indicative mood', () => {
     expect(decodeFormTag('R1S')).toEqual({ tense: 'R', person: '1', number: 'S', mood: 'I' });
     expect(decodeFormTag('R3P')).toEqual({ tense: 'R', person: '3', number: 'P', mood: 'I' });
@@ -108,17 +112,87 @@ describe('posFromParadigmTag', () => {
 });
 
 describe('decodeParadigmTag', () => {
-  it('decodes noun with animacy at position 3', () => {
-    expect(decodeParadigmTag('NCIINM1')).toEqual({ pos: 'N', animacy: 'I' });
-    expect(decodeParadigmTag('NCIANM1')).toEqual({ pos: 'N', animacy: 'A' });
+  it('decodes noun-level grammemes using the GrammarDB positions', () => {
+    // N [properness] [animacy] [personality] [abbreviation] [gender] [declension]
+    expect(decodeParadigmTag('NCAINM2')).toEqual({
+      pos: 'N',
+      properness: 'C',
+      animacy: 'A',
+      abbreviation: 'N',
+      gender: 'M',
+    });
+    expect(decodeParadigmTag('NCAPNM1')).toEqual({
+      pos: 'N',
+      properness: 'C',
+      animacy: 'A',
+      abbreviation: 'N',
+      gender: 'M',
+    });
   });
 
-  it('decodes perfective verb', () => {
-    expect(decodeParadigmTag('VTPN1')).toEqual({ pos: 'V', aspect: 'P' });
+  it('distinguishes proper nouns and abbreviations', () => {
+    expect(decodeParadigmTag('NPIINM1')).toMatchObject({
+      properness: 'P',
+      abbreviation: 'N',
+    });
+    expect(decodeParadigmTag('NPIIKM0')).toMatchObject({
+      properness: 'P',
+      abbreviation: 'K',
+    });
+    expect(decodeParadigmTag('NPIIBM1')).toMatchObject({
+      properness: 'P',
+      abbreviation: 'B',
+    });
   });
 
-  it('decodes imperfective verb', () => {
-    expect(decodeParadigmTag('VIMN2')).toEqual({ pos: 'V', aspect: 'M' });
+  it('decodes perfective non-reflexive verb metadata', () => {
+    expect(decodeParadigmTag('VTPN2')).toEqual({
+      pos: 'V',
+      transitivity: 'T',
+      aspect: 'P',
+      reflexivity: 'N',
+      conjugation: '2',
+    });
+  });
+
+  it('decodes imperfective reflexive verb metadata', () => {
+    expect(decodeParadigmTag('VIMR1')).toEqual({
+      pos: 'V',
+      transitivity: 'I',
+      aspect: 'M',
+      reflexivity: 'R',
+      conjugation: '1',
+    });
+  });
+
+  it('decodes pronoun type and person', () => {
+    expect(decodeParadigmTag('SNP2')).toEqual({
+      pos: 'S',
+      pronounType: 'P',
+      person: '2',
+    });
+  });
+
+  it('decodes numeral type', () => {
+    expect(decodeParadigmTag('MNCS')).toEqual({
+      pos: 'M',
+      numeralType: 'C',
+    });
+    expect(decodeParadigmTag('MAOS')).toEqual({
+      pos: 'M',
+      numeralType: 'O',
+    });
+  });
+
+  it('decodes conjunction type', () => {
+    expect(decodeParadigmTag('CSX')).toEqual({
+      pos: 'C',
+      conjunctionType: 'S',
+    });
+    expect(decodeParadigmTag('CKX')).toEqual({
+      pos: 'C',
+      conjunctionType: 'K',
+    });
   });
 
   it('decodes active participle, imperfective', () => {

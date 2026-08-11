@@ -36,9 +36,9 @@ export class ParseResult {
     this.predicted = predicted;
     this.lemma = stem + paradigm.lemmaSuffix;
 
-    // Decode tags: paradigm supplies pos/aspect/voice; form supplies case/number/gender/tense/mood/person
+    // Decode tags: the paradigm supplies lexeme-level metadata; the form supplies inflection metadata.
     const formTag = tagTable[paradigm.entries[formIdx].tagId];
-    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag);
+    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag, paradigm.government);
     const formGrammeme = decodeFormTag(formTag);
     this.tags = { ...paradigmGrammeme, ...formGrammeme };
   }
@@ -51,7 +51,7 @@ export class ParseResult {
     const { _stem: stem, _paradigm: paradigm, _tagTable: tagTable } = this;
     const normalizedTarget = normalizeGrammeme(target);
 
-    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag);
+    const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag, paradigm.government);
 
     for (let i = 0; i < paradigm.entries.length; i++) {
       const formTag = tagTable[paradigm.entries[i].tagId];

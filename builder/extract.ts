@@ -1,11 +1,13 @@
 import { XMLParser } from 'fast-xml-parser';
 import * as fs from 'fs/promises';
 import { resolve, join } from 'path';
+import type { Case } from '../src/tags.js';
 
 export interface RawWord {
   variantId: number;
   lemma: string;
   paradigmTag: string;
+  government?: Case[];
   forms: Array<{ formTag: string; text: string }>;
 }
 
@@ -26,6 +28,7 @@ interface XMLParadigm {
   '@_pdgId': string;
   '@_lemma': string;
   '@_tag': string;
+  '@_govern'?: string;
   '@_regulation'?: string;
   Note?: string;
   Variant?: XMLVariant | XMLVariant[];
@@ -49,6 +52,17 @@ function removeStress(word: string): string {
  */
 function normalizeWord(word: string): string {
   return removeStress(word).toLowerCase();
+}
+
+function parseGovernment(value: string | undefined): Case[] | undefined {
+  if (!value) return undefined;
+
+  const cases: Case[] = [];
+  for (const match of value.matchAll(/[+*]([NGDAILV])/g)) {
+    const grammaticalCase = match[1] as Case;
+    if (!cases.includes(grammaticalCase)) cases.push(grammaticalCase);
+  }
+  return cases.length > 0 ? cases : undefined;
 }
 
 /**
@@ -77,6 +91,7 @@ async function parseXMLFile(filePath: string): Promise<RawWord[]> {
     const paradigmId = paradigm['@_pdgId'];
     const paradigmTag = paradigm['@_tag'];
     const baseLemma = paradigm['@_lemma'];
+    const government = parseGovernment(paradigm['@_govern']);
 
     // Ensure Variant is an array
     const variants = paradigm.Variant
@@ -119,6 +134,7 @@ async function parseXMLFile(filePath: string): Promise<RawWord[]> {
           variantId,
           lemma: normalizedLemma,
           paradigmTag,
+          government,
           forms,
         });
       }

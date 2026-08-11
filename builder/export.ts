@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import type { AnalysisResult } from './analyze.js';
+import type { Case } from '../src/tags.js';
 
 /**
  * Serialize analysis results to dict/ files (gzip-compressed).
@@ -38,11 +39,27 @@ export function exportDict(
   const paradigmTagToIdx = new Map<string, number>();
   paradigmTags.forEach((tag, idx) => paradigmTagToIdx.set(tag, idx));
 
+  const governmentKeys = [''];
+  const governmentToIdx = new Map<string, number>([['', 0]]);
+  for (const paradigm of paradigms) {
+    const key = paradigm.government?.join('') ?? '';
+    if (!governmentToIdx.has(key)) {
+      governmentToIdx.set(key, governmentKeys.length);
+      governmentKeys.push(key);
+    }
+  }
+  const governments = governmentKeys.map(key => Array.from(key) as Case[]);
+
+  if (paradigmTags.length > 256 || governments.length > 256) {
+    throw new Error('Dictionary metadata tables exceed the uint8 index limit');
+  }
+
   // 3. Serialize paradigms.bin (gzipped)
   // Format:
   //   [paradigmCount: uint32]
   //   Per paradigm:
   //     [paradigmTagIdx: uint8]
+  //     [governmentIdx: uint8]
   //     [lemmaSuffixLen: uint8] [lemmaSuffix: bytes]
   //     [entryCount: uint16]
   //     Per entry: [tagId: uint16] [suffixLen: uint8] [suffix: bytes]
@@ -53,9 +70,10 @@ export function exportDict(
 
   for (const paradigm of paradigms) {
     const lemmaSuffixBytes = Buffer.from(paradigm.lemmaSuffix, 'utf-8');
-    const metaBuf = Buffer.alloc(2 + lemmaSuffixBytes.length + 2);
+    const metaBuf = Buffer.alloc(3 + lemmaSuffixBytes.length + 2);
     let pos = 0;
     metaBuf[pos++] = paradigmTagToIdx.get(paradigm.paradigmTag)!;
+    metaBuf[pos++] = governmentToIdx.get(paradigm.government?.join('') ?? '')!;
     metaBuf[pos++] = lemmaSuffixBytes.length;
     lemmaSuffixBytes.copy(metaBuf, pos);
     pos += lemmaSuffixBytes.length;
@@ -79,11 +97,12 @@ export function exportDict(
 
   // 5. Write meta.json
   const meta = {
-    version: 4,
+    version: 5,
     paradigmCount: paradigms.length,
     formTagCount: tagTable.length,
     tagTable,
     paradigmTags,
+    governments,
     paradigmCounts: analysis.paradigmCounts,
   };
   writeFileSync(join(outDir, 'meta.json'), JSON.stringify(meta));

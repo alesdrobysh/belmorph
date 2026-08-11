@@ -1,4 +1,5 @@
 import { DawgReader } from './dawg/dawg-reader.js';
+import type { Case } from './tags.js';
 
 export interface ParadigmEntry {
   tagId: number;
@@ -9,6 +10,7 @@ export interface Paradigm {
   entries: ParadigmEntry[];
   paradigmTag: string;
   lemmaSuffix: string;
+  government?: Case[];
 }
 
 export interface DictData {
@@ -25,6 +27,7 @@ export interface MetaJson {
   paradigmTags: string[];
   paradigmCount: number;
   paradigmCounts?: number[];
+  governments?: Case[][];
 }
 
 /**
@@ -32,11 +35,17 @@ export interface MetaJson {
  *   [paradigmCount: uint32]
  *   Per paradigm:
  *     [paradigmTagIdx: uint8]
+ *     [governmentIdx: uint8] (version 5+)
  *     [lemmaSuffixLen: uint8] [lemmaSuffix: bytes]
  *     [entryCount: uint16]
  *     Per entry: [tagId: uint16] [suffixLen: uint8] [suffix: bytes]
  */
-export function readParadigms(buf: Uint8Array, paradigmTags: string[]): Paradigm[] {
+export function readParadigms(
+  buf: Uint8Array,
+  paradigmTags: string[],
+  version = 4,
+  governments: Case[][] = [],
+): Paradigm[] {
   const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   const decoder = new TextDecoder();
   let pos = 0;
@@ -46,6 +55,7 @@ export function readParadigms(buf: Uint8Array, paradigmTags: string[]): Paradigm
   for (let i = 0; i < count; i++) {
     const paradigmTagIdx = buf[pos++];
     const paradigmTag = paradigmTags[paradigmTagIdx];
+    const government = version >= 5 ? governments[buf[pos++]] : undefined;
 
     const lemmaSuffixLen = buf[pos++];
     const lemmaSuffix = decoder.decode(buf.subarray(pos, pos + lemmaSuffixLen));
@@ -62,7 +72,9 @@ export function readParadigms(buf: Uint8Array, paradigmTags: string[]): Paradigm
       entries[j] = { tagId, suffix };
     }
 
-    paradigms[i] = { entries, paradigmTag, lemmaSuffix };
+    paradigms[i] = government?.length
+      ? { entries, paradigmTag, lemmaSuffix, government }
+      : { entries, paradigmTag, lemmaSuffix };
   }
 
   return paradigms;
@@ -95,7 +107,12 @@ export async function loadDictAsync(baseUrl: string | URL = '/dict/'): Promise<D
   return {
     dawg,
     predictDawg,
-    paradigms: readParadigms(paradigmsBuf, meta.paradigmTags),
+    paradigms: readParadigms(
+      paradigmsBuf,
+      meta.paradigmTags,
+      meta.version,
+      meta.governments,
+    ),
     tagTable: meta.tagTable,
     paradigmCounts: meta.paradigmCounts ?? [],
   };

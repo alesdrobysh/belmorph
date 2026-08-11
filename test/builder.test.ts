@@ -23,12 +23,14 @@ describe('builder output', () => {
 
   it('generates meta.json with correct structure', () => {
     const meta = JSON.parse(readFileSync(resolve(dictDir, 'meta.json'), 'utf-8'));
-    expect(meta.version).toBe(4);
+    expect(meta.version).toBe(5);
     expect(meta.paradigmCount).toBeGreaterThan(1000);
     expect(meta.tagTable).toBeInstanceOf(Array);
     expect(meta.tagTable.length).toBeGreaterThan(50);
     expect(meta.paradigmTags).toBeInstanceOf(Array);
     expect(meta.paradigmTags.length).toBeGreaterThan(100);
+    expect(meta.governments).toBeInstanceOf(Array);
+    expect(meta.governments).toContainEqual(['G']);
     expect(meta.paradigmCounts).toBeInstanceOf(Array);
     expect(meta.paradigmCounts.length).toBe(meta.paradigmCount);
     // No longer has lemmaOverrides or wordCount
