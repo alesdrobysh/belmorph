@@ -8,11 +8,12 @@ export interface RawWord {
   lemma: string;
   paradigmTag: string;
   government?: Case[];
-  forms: Array<{ formTag: string; text: string }>;
+  forms: Array<{ formTag: string; text: string; numeral?: boolean }>;
 }
 
 interface XMLForm {
   '@_tag'?: string;
+  '@_type'?: string;
   '#text': string;
 }
 
@@ -109,7 +110,7 @@ async function parseXMLFile(filePath: string): Promise<RawWord[]> {
       const normalizedLemma = normalizeWord(lemma);
 
       // Process forms
-      const forms: Array<{ formTag: string; text: string }> = [];
+      const forms: Array<{ formTag: string; text: string; numeral?: boolean }> = [];
 
       if (variant.Form) {
         const formArray = Array.isArray(variant.Form)
@@ -124,6 +125,7 @@ async function parseXMLFile(filePath: string): Promise<RawWord[]> {
             forms.push({
               formTag,
               text: normalizedForm,
+              numeral: form['@_type'] === 'numeral',
             });
           }
         }

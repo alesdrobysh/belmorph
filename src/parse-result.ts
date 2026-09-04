@@ -48,12 +48,18 @@ export class ParseResult {
    * Returns a new ParseResult for the matching form, or null if not found.
    */
   inflect(target: GrammemeInput): ParseResult | null {
+    return this.inflectInternal(target);
+  }
+
+  /** @internal */
+  private inflectInternal(target: GrammemeInput, numeral = false): ParseResult | null {
     const { _stem: stem, _paradigm: paradigm, _tagTable: tagTable } = this;
     const normalizedTarget = normalizeGrammeme(target);
 
     const paradigmGrammeme = decodeParadigmTag(paradigm.paradigmTag, paradigm.government);
 
     for (let i = 0; i < paradigm.entries.length; i++) {
+      if (numeral !== Boolean(paradigm.entries[i].numeral)) continue;
       const formTag = tagTable[paradigm.entries[i].tagId];
       const grammeme = { ...paradigmGrammeme, ...decodeFormTag(formTag) };
 
@@ -78,13 +84,11 @@ export class ParseResult {
    *
    * Uses `Intl.PluralRules('be')` CLDR categories to determine agreement:
    * `one` counts (1, 21, ... — not 11) take singular in the target case;
-   * `few` counts (2-4, 22-24, ... — not 12-14) take genitive singular for
-   * nominative/accusative; everything else (`many`/`other`) takes genitive
+   * `few` counts (2-4, 22-24, ... — not 12-14) take the special plural form
+   * in nominative/accusative; everything else (`many`/`other`) takes genitive
    * plural. For any non-direct `targetCase` (genitive, dative, instrumental,
    * locative, vocative): that case is kept and only number changes —
-   * singular for `one`, plural otherwise. The genitive-singular-for-`few`
-   * quirk only applies to the direct-case counting form, not to oblique
-   * government.
+   * singular for `one`, plural otherwise.
    */
   pluralize(count: number, targetCase: Case | CaseName = 'N'): ParseResult | null {
     const normalizedCase = normalizeGrammeme({ case: targetCase }).case as Case;
@@ -100,12 +104,15 @@ export class ParseResult {
     } else if (isSingularAgreement) {
       target = { case: normalizedCase, number: 'S' };
     } else if (category === 'few') {
-      target = { case: 'G', number: 'S' };
+      target = { case: normalizedCase, number: 'P' };
     } else {
       target = { case: 'G', number: 'P' };
     }
 
-    return this.inflect(target);
+    const numeralForm = isDirectCase && category === 'few'
+      ? this.inflectInternal(target, true)
+      : null;
+    return numeralForm ?? this.inflectInternal(target, false);
   }
 
   /**

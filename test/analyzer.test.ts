@@ -206,11 +206,11 @@ describe('ParseResult.pluralize', () => {
     expect(city.pluralize(1)!.word).toBe('горад');
   });
 
-  it('agrees горад with 2, 3, 4 → genitive singular', () => {
+  it('agrees горад with 2, 3, 4 → special nominative plural', () => {
     const city = morph.parse('горад')[0];
-    expect(city.pluralize(2)!.word).toBe('горада');
-    expect(city.pluralize(3)!.word).toBe('горада');
-    expect(city.pluralize(4)!.word).toBe('горада');
+    expect(city.pluralize(2)!.word).toBe('гарады');
+    expect(city.pluralize(3)!.word).toBe('гарады');
+    expect(city.pluralize(4)!.word).toBe('гарады');
   });
 
   it('agrees горад with 5+ → genitive plural', () => {
@@ -232,17 +232,17 @@ describe('ParseResult.pluralize', () => {
     expect(city.pluralize(14)!.word).toBe('гарадоў');
   });
 
-  it('agrees горад with 21 → nominative singular, 22-24 → genitive singular', () => {
+  it('agrees горад with 21 → nominative singular, 22-24 → nominative plural', () => {
     const city = morph.parse('горад')[0];
     expect(city.pluralize(21)!.word).toBe('горад');
-    expect(city.pluralize(22)!.word).toBe('горада');
-    expect(city.pluralize(24)!.word).toBe('горада');
+    expect(city.pluralize(22)!.word).toBe('гарады');
+    expect(city.pluralize(24)!.word).toBe('гарады');
   });
 
   it('agrees negative counts the same as their absolute value', () => {
     const city = morph.parse('горад')[0];
     expect(city.pluralize(-1)!.word).toBe('горад');
-    expect(city.pluralize(-2)!.word).toBe('горада');
+    expect(city.pluralize(-2)!.word).toBe('гарады');
     expect(city.pluralize(-5)!.word).toBe('гарадоў');
   });
 
@@ -251,6 +251,19 @@ describe('ParseResult.pluralize', () => {
     expect(book.pluralize(1)!.word).toBe('кніга');
     expect(book.pluralize(2)!.word).toBe('кнігі');
     expect(book.pluralize(5)!.word).toBe('кніг');
+  });
+
+  it('uses lexical plural forms for irregular and stem-changing nouns', () => {
+    const item = morph.parse('тавар')[0];
+    const horse = morph.parse('конь')[0];
+    expect(item.pluralize(3)!.word).toBe('тавары');
+    expect(horse.pluralize(4)!.word).toBe('кані');
+  });
+
+  it('uses GrammarDB numeral exceptions', () => {
+    expect(morph.parse('сястра')[0].pluralize(2)!.word).toBe('сястры');
+    expect(morph.parse('акно')[0].pluralize(3)!.word).toBe('акны');
+    expect(morph.parse('гняздо')[0].pluralize(4)!.word).toBe('гнязды');
   });
 
   it('defaults to nominative regardless of the starting form\'s own case', () => {
@@ -263,7 +276,7 @@ describe('ParseResult.pluralize', () => {
   it('accepts an explicit accusative targetCase', () => {
     const book = morph.parse('кніга')[0];
     expect(book.pluralize(1, 'A')!.word).toBe('кнігу'); // accusative singular
-    expect(book.pluralize(2, 'A')!.word).toBe('кнігі'); // genitive singular quirk still applies
+    expect(book.pluralize(2, 'A')!.word).toBe('кнігі'); // special plural form
     expect(book.pluralize(5, 'A')!.word).toBe('кніг'); // genitive plural
   });
 

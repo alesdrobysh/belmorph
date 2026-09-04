@@ -4,6 +4,7 @@ import type { Case } from '../src/tags.js';
 export interface ParadigmEntry {
   tagId: number;   // index into tagTable
   suffix: string;
+  numeral?: boolean; // form specifically used after два/тры/чатыры
 }
 
 export interface Paradigm {
@@ -74,7 +75,7 @@ export function analyzeWords(rawWords: RawWord[]): AnalysisResult {
     lemmaSuffix: string,
     government?: Case[],
   ): number {
-    const key = paradigmTag + '|' + (government?.join('') ?? '') + '|' + lemmaSuffix + '||' + entries.map(e => `${e.tagId}:${e.suffix}`).join('|');
+    const key = paradigmTag + '|' + (government?.join('') ?? '') + '|' + lemmaSuffix + '||' + entries.map(e => `${e.tagId}:${e.suffix}:${e.numeral ? 'n' : ''}`).join('|');
     let id = paradigmMap.get(key);
     if (id === undefined) {
       id = paradigms.length;
@@ -95,6 +96,7 @@ export function analyzeWords(rawWords: RawWord[]): AnalysisResult {
     const entries: ParadigmEntry[] = raw.forms.map(f => ({
       tagId: getTagId(f.formTag),
       suffix: f.text.slice(stem.length),
+      numeral: f.numeral,
     }));
 
     // lemmaSuffix: the part of the lemma after the stem

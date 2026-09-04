@@ -23,7 +23,7 @@ describe('builder output', () => {
 
   it('generates meta.json with correct structure', () => {
     const meta = JSON.parse(readFileSync(resolve(dictDir, 'meta.json'), 'utf-8'));
-    expect(meta.version).toBe(5);
+    expect(meta.version).toBe(6);
     expect(meta.paradigmCount).toBeGreaterThan(1000);
     expect(meta.tagTable).toBeInstanceOf(Array);
     expect(meta.tagTable.length).toBeGreaterThan(50);

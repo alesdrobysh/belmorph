@@ -62,7 +62,7 @@ export function exportDict(
   //     [governmentIdx: uint8]
   //     [lemmaSuffixLen: uint8] [lemmaSuffix: bytes]
   //     [entryCount: uint16]
-  //     Per entry: [tagId: uint16] [suffixLen: uint8] [suffix: bytes]
+  //     Per entry: [tagId: uint16] [flags: uint8] [suffixLen: uint8] [suffix: bytes]
   const paradigmParts: Buffer[] = [];
   const headerBuf = Buffer.alloc(4);
   headerBuf.writeUInt32LE(paradigms.length, 0);
@@ -82,10 +82,11 @@ export function exportDict(
 
     for (const entry of paradigm.entries) {
       const suffixBytes = Buffer.from(entry.suffix, 'utf-8');
-      const entryBuf = Buffer.alloc(3 + suffixBytes.length);
+      const entryBuf = Buffer.alloc(4 + suffixBytes.length);
       entryBuf.writeUInt16LE(entry.tagId, 0);
-      entryBuf[2] = suffixBytes.length;
-      suffixBytes.copy(entryBuf, 3);
+      entryBuf[2] = entry.numeral ? 1 : 0;
+      entryBuf[3] = suffixBytes.length;
+      suffixBytes.copy(entryBuf, 4);
       paradigmParts.push(entryBuf);
     }
   }
@@ -97,7 +98,7 @@ export function exportDict(
 
   // 5. Write meta.json
   const meta = {
-    version: 5,
+    version: 6,
     paradigmCount: paradigms.length,
     formTagCount: tagTable.length,
     tagTable,

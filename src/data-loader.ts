@@ -4,6 +4,7 @@ import type { Case } from './tags.js';
 export interface ParadigmEntry {
   tagId: number;
   suffix: string;
+  numeral?: boolean;
 }
 
 export interface Paradigm {
@@ -38,7 +39,8 @@ export interface MetaJson {
  *     [governmentIdx: uint8] (version 5+)
  *     [lemmaSuffixLen: uint8] [lemmaSuffix: bytes]
  *     [entryCount: uint16]
- *     Per entry: [tagId: uint16] [suffixLen: uint8] [suffix: bytes]
+ *     Per entry: [tagId: uint16] [flags: uint8] (version 6+)
+ *                 [suffixLen: uint8] [suffix: bytes]
  */
 export function readParadigms(
   buf: Uint8Array,
@@ -66,10 +68,11 @@ export function readParadigms(
 
     for (let j = 0; j < entryCount; j++) {
       const tagId = view.getUint16(pos, true); pos += 2;
+      const numeral = version >= 6 ? (buf[pos++] & 1) !== 0 : false;
       const suffixLen = buf[pos++];
       const suffix = decoder.decode(buf.subarray(pos, pos + suffixLen));
       pos += suffixLen;
-      entries[j] = { tagId, suffix };
+      entries[j] = numeral ? { tagId, suffix, numeral: true } : { tagId, suffix };
     }
 
     paradigms[i] = government?.length
