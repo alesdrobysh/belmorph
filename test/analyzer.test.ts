@@ -10,6 +10,23 @@ beforeAll(() => {
 });
 
 describe('MorphAnalyzer.parse', () => {
+  it('parses words containing ё without losing their analyses', () => {
+    const results = morph.parse('усё');
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.some(result => result.lemma === 'усё')).toBe(true);
+  });
+
+  it('keeps correct tags for ё words', () => {
+    const major = morph.parse('маёр').find(result => result.lemma === 'маёр');
+    const village = morph.parse('вёска').find(result => result.lemma === 'вёска');
+
+    expect(major).toBeDefined();
+    expect(major!.tags).toMatchObject({ pos: 'N', gender: 'M', case: 'N', number: 'S' });
+    expect(village).toBeDefined();
+    expect(village!.tags).toMatchObject({ pos: 'N', gender: 'F', case: 'N', number: 'S' });
+  });
+
   it('parses горад as a noun', () => {
     const results = morph.parse('горад');
     expect(results.length).toBeGreaterThan(0);

@@ -1,5 +1,5 @@
 // Belarusian alphabet mapping (must match builder/compress.ts)
-export const ALPHABET = 'абвгдежзійклмнопрстуўфхцчшыьэюя\'-';
+export const ALPHABET = 'абвгдеёжзійклмнопрстуўфхцчшыьэюя\'-';
 
 export const CHAR_MAP = new Map<string, number>();
 export const CHARS: string[] = [];

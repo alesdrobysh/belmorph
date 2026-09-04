@@ -6,7 +6,7 @@ import type { AnalysisResult } from './analyze.js';
 const CHAR_MAP = new Map<string, number>();
 const CHARS: string[] = [];
 
-const ALPHABET = 'абвгдежзійклмнопрстуўфхцчшыьэюя\'-';
+const ALPHABET = 'абвгдеёжзійклмнопрстуўфхцчшыьэюя\'-';
 for (let i = 0; i < ALPHABET.length; i++) {
   CHAR_MAP.set(ALPHABET[i], i);
   CHARS.push(ALPHABET[i]);
