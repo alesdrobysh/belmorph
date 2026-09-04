@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.4] - 2026-09-04
+
+### Changed
+- Normalize typographic apostrophes to standard characters
+- Update demo dictionary during the build process
+
+
 ## [1.1.3] - 2026-09-04
 
 ### Added
