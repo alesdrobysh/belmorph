@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { cpSync, existsSync } from 'node:fs';
+import { cpSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,7 +12,7 @@ function copyDictPlugin() {
     buildStart() {
       const src = resolve(__dirname, '../dict');
       const dest = resolve(__dirname, 'public/dict');
-      if (!existsSync(dest)) cpSync(src, dest, { recursive: true });
+      cpSync(src, dest, { recursive: true, force: true });
     },
   };
 }
