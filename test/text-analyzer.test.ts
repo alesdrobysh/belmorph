@@ -47,6 +47,16 @@ describe('TextAnalyzer', () => {
     expect(words[0]!.parse!.lemma).toBe("аб'ява");
   });
 
+  it('normalizes typographic apostrophes in words', () => {
+    for (const word of ['сям’я', 'сямʼя']) {
+      const result = analyzer.words(word);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.parse?.predicted).toBe(false);
+      expect(result[0]!.parse?.lemma).toBe("сям'я");
+      expect(result[0]!.parse?.tags.gender).toBe('F');
+    }
+  });
+
   it('handles hyphenated words', () => {
     const words = analyzer.words('што-небудзь');
     expect(words).toHaveLength(1);

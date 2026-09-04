@@ -2,6 +2,7 @@ import { XMLParser } from 'fast-xml-parser';
 import * as fs from 'fs/promises';
 import { resolve, join } from 'path';
 import type { Case } from '../src/tags.js';
+import { normalizeApostrophes } from '../src/normalization.js';
 
 export interface RawWord {
   variantId: number;
@@ -52,7 +53,7 @@ function removeStress(word: string): string {
  * Normalize a word - convert to lowercase and remove stress
  */
 function normalizeWord(word: string): string {
-  return removeStress(word).toLowerCase();
+  return normalizeApostrophes(removeStress(word).toLowerCase());
 }
 
 function parseGovernment(value: string | undefined): Case[] | undefined {

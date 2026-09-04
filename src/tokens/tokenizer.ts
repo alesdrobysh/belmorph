@@ -11,6 +11,10 @@ function isLetter(ch: string): boolean  { return isCyrillic(ch) || isLatin(ch); 
 function isDigit(ch: string): boolean   { return DIGIT_RE.test(ch); }
 function isLetterOrDigit(ch: string): boolean { return isLetter(ch) || isDigit(ch); }
 
+function isApostrophe(ch: string): boolean {
+  return /[\u2018\u2019\u201B\u02BB\u02BC\u2032\u2035\uFF07]/u.test(ch);
+}
+
 function wordSubType(ch: string): WordSubType {
   if (isCyrillic(ch)) return WordSubType.CYRIL;
   if (isLatin(ch)) return WordSubType.LATIN;
@@ -125,7 +129,7 @@ export class Tokenizer {
           } else if (c === '-' && i + 1 < this.source.length && isLetter(this.source[i + 1]!)) {
             currentSubType = WordSubType.MIXED;
             i++;
-          } else if (c === "'" && i + 1 < this.source.length && isLetter(this.source[i + 1]!)) {
+          } else if ((c === "'" || isApostrophe(c)) && i + 1 < this.source.length && isLetter(this.source[i + 1]!)) {
             i++;
           } else if ((c === '@' || c === '.') && i + 1 < this.source.length && isLetterOrDigit(this.source[i + 1]!)) {
             // Email-aware: allow @ and . inside words to capture emails as single tokens

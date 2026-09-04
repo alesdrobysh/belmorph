@@ -1,4 +1,5 @@
 import { loadDictAsync, type DictData } from './data-loader.js';
+import { normalizeApostrophes } from './normalization.js';
 import { ParseResult } from './parse-result.js';
 
 export class MorphAnalyzer {
@@ -16,7 +17,7 @@ export class MorphAnalyzer {
    * Parse a word and return all possible morphological analyses.
    */
   parse(word: string): ParseResult[] {
-    const normalized = word.toLowerCase();
+    const normalized = normalizeApostrophes(word.toLowerCase());
     const lookups = this.dict.dawg.lookup(normalized);
 
     if (lookups.length > 0) {
